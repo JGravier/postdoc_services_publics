@@ -9,17 +9,19 @@ library(classInt)
 library(explor)
 library(ade4)
 library(patchwork)
+library(ggsn) # pour les échelles (carto)
 
 source("fonctions_bases.R")
 
-# ------------- fond france ----------------
+# --------------------------------- fond de carte France ----------------
 france <- read_sf("BPE/data_communes_au/REGION.shp", stringsAsFactors = FALSE, options = "ENCODING=UTF-8") %>%
-  st_set_crs(2154) %>%
-  filter(NOM_REG != "Corse")
+  st_set_crs(2154) %>% # epsg : 2154, Lambert 93
+  filter(NOM_REG != "Corse") # sans la Corse
 
-# -------------------- AU en sf ---------------------
+# -------------------------------------- AU en sf ---------------------
 communes_2019 <- read_sf("BPE/data_communes_au/COMMUNES.shp", stringsAsFactors = FALSE, options = "ENCODING=UTF-8") %>%
-  st_set_crs(2154) # epsg : 2154, Lambert 93
+  st_set_crs(2154)
+
 communes_2019_au_2010 <- read_excel("BPE/data_communes_au/AU2010_au_01-01-2019.xls", sheet = "data_composition_communale")
 au_2010_2019 <- read_excel("BPE/data_communes_au/AU2010_au_01-01-2019.xls", sheet = "data_AU2010")
 
@@ -36,8 +38,8 @@ communes_2019_au_2010 <- communes_2019_au_2010 %>%
   filter(DEP %ni% c("971", "972", "973", "974", "976")) %>% # on retire les communes appartenant aux DOM
   mutate(INSEE_COM = CODGEO)
 # maintenant le fichier contient 34886 individus, soit 45 de moins que dans le fichier spatial de l'IGN
-# cela est dû au fait que d'un côté Paris, Marseille et Lyon soit groupées en communes (fichier AU de l'Insee),
-# tandis que de l'autre on a les arrondissements de ces communes
+# cela est dû au fait que d'un côté Paris, Marseille et Lyon sont groupées en communes (fichier AU de l'Insee),
+# tandis que de l'autre on a les arrondissements de ces communes (fichier de l'IGN)
 
 # création d'un objet sf des AU en France métropolitaine
 communes_2019_au_2010 <- left_join(x = communes_2019_au_2010, y = communes_2019, by = "INSEE_COM") %>%
@@ -47,8 +49,9 @@ au_2010_pop <- communes_2019_au_2010 %>%
   filter(CATAEU2010 %ni% c("300", "400", "120"), INSEE_DEP %ni% c("2A", "2B")) %>% # soit celle n'étant ni 300 = "Autre commune multipolarisée", 
   # ni 400 = "Commune isolée hors influence des pôles"
   # ni les 120 = "multipolarisées des grands pôles"
-  st_set_precision(1000000) %>% lwgeom::st_make_valid() %>% # ok il y a un pb dans les données de l'IGN, en gros une topologie qui n'est pas
-  # bien enregistrée (avec une auto-intersection) ; j'ai trouvé cette solution sur https://github.com/r-spatial/sf/issues/603
+  st_set_precision(1000000) %>% 
+  lwgeom::st_make_valid() %>% # il y a un pb dans les données de l'IGN, en gros une topologie qui n'est pas
+  # bien enregistrée (avec une auto-intersection) ; solution trouvée sur https://github.com/r-spatial/sf/issues/603
   # l'idée étant d'amoindrir la précision spatiale pour que le group_by puisse fonctionner (sachant qu'on a ici une précision très très fine,
   # de l'odre du "subsubsubsub-centimetric if we are speaking of a metric projection" pour reprendre la phrase Lorenzo Busetto)
   group_by(AU2010) %>%
@@ -56,6 +59,7 @@ au_2010_pop <- communes_2019_au_2010 %>%
   left_join(x = ., y = au_2010_2019, by = "AU2010") %>%
   st_cast(x = ., to = "MULTIPOLYGON") # ce qui est bien pour l'export en shp
 
+# vérification de la validité de la création des aires urbaines
 tmap_mode("view")
 tm_shape(shp = au_2010_pop) +
   tm_fill(col = "grey", alpha = 0.1) +
@@ -77,35 +81,22 @@ rm(metadonnees)
 bpe_poste <- bpe_evolution %>%
   filter(TYPEQU %in% c("A206", "A207", "A208")) %>%
   left_join(., y = au_2010_pop, by = c("ID_AU2010" = "AU2010")) %>%
-  filter(!is.na(population)) %>%
+  filter(!is.na(population)) %>% # si on a pas de données pop des AU, c'est que ce sont des activités postales situées hors AU
+  # donc on les supprime
   st_as_sf()
 
-# enrichissement du tableau : densité pour 10 000 habitants
+# enrichissement du tableau : densité et TCAM
 bpe_poste <- bpe_poste %>%
-  mutate(densite_2013 = NB_2013/population*10000,
-         densite_2018 = NB_2018/population*10000,
-         TCAM = TCAM(datefin = NB_2018, datedebut = NB_2013, nbannee = 5))
+  mutate(densite_2013 = NB_2013/population*10000, # densité pour 10 000 habitants 
+         densite_2018 = NB_2018/population*10000, # densité pour 10 000 habitants 
+         TCAM = TCAM(datefin = NB_2018, datedebut = NB_2013, nbannee = 5)) # taux de croissance annuel moyen
 
 
-# ------------> corrélations par type d'activité postale (hors Paris)
-
-bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
-  select(population, densite_2013, densite_2018) %>%
-  st_drop_geometry() %>% 
-  ggpairs()
-
-bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
-  select(population, TCAM) %>% 
-  st_drop_geometry() %>% 
-  ggpairs()
-
-
-
-# ------------> densité 2018 des activités postales : activité par activité
+# ------------------ densité 2018 des activités postales : activité par activité -----------------------
 
 # ------------------------------------- Les bureaux de poste :
-classes <- bpe_poste %>% filter(TYPEQU == "A206") 
-classes <- classIntervals(var = classes$densite_2018, n = 5, style = "jenks")
+classes <- bpe_poste %>% filter(TYPEQU == "A206")  # sélection des bureaux
+classes <- classIntervals(var = classes$densite_2018, n = 5, style = "jenks") # discrétisation de Jenks en 5 classes
 
 # France : cartographie
 ggplot() +
@@ -115,10 +106,14 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
+  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
+  xlab("") +
+  ylab("") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Bureaux de poste")
 
 
@@ -132,11 +127,16 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
+  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
+           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
+  xlab("") +
+  ylab("") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Bureaux de poste")
 
 
@@ -153,11 +153,14 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
+  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  ggtitle("Relais de poste")
+  xlab("") +
+  ylab("") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018")  ggtitle("Relais de poste")
 
 
 # Grand Est : cartographie
@@ -168,11 +171,15 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
+           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
+  xlab("") +
+  ylab("") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Relais de poste")
 
 
@@ -188,10 +195,14 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
+  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
+  xlab("") +
+  ylab("") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Agences postales communales")
 
 
@@ -203,17 +214,20 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
+           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
+  xlab("") +
+  ylab("") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Relais de poste")
 
 
 
-
-# -----------------------------------------arret reprise--------------------------------------------------------------
+# ----------------> à reprendre
 
 # TCAM en considérant un découpage préalable : bureaux de poste
 classes <- bpe_poste %>% filter(TYPEQU == "A206") 
@@ -256,7 +270,7 @@ ggplot() +
 # ----------------- deuxième temps explo Poste ---------------
 # il est nécessaire de faire préalablement des explorations graphiques
 # selon différents critères : taille des villes, évolution démo précédente (type de décroissance),
-# situation géographique (trouver des indicateurs résumés de distance, selon appartenance terr.)
+# situation géographique (trouver des indicateurs résumés de distance, selon appartenance terr.), etc.
 bpe_poste <- bpe_poste %>%
   mutate(TAU2016_group = ifelse(TAU2016 %in% c("01", "02", "03", "04"), "petite", # groupe de inf à 15 000 à 35 000 hab
                                 ifelse(TAU2016 %in% c("08", "09"), "grande",
@@ -399,6 +413,19 @@ R_deux <- Summary_AOV[3]/SCT
 
 
 # ----------------------- corr. plot
+
+# ------------> corrélations par type d'activité postale (hors Paris)
+
+bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
+  select(population, densite_2013, densite_2018) %>%
+  st_drop_geometry() %>% 
+  ggpairs()
+
+bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
+  select(population, TCAM) %>% 
+  st_drop_geometry() %>% 
+  ggpairs()
+
 # -----> évolution des bureaux de poste selon la population :
 bpe_poste %>% filter(TYPEQU == "A206" & LIBAU2010 != "Paris") %>%
   select(population, TCAM) %>% 
