@@ -13,15 +13,15 @@ library(patchwork)
 source("fonctions_bases.R")
 
 # ------------- fond france ----------------
-france <- read_sf("data_communes_au/REGION.shp", stringsAsFactors = FALSE, options = "ENCODING=UTF-8") %>%
+france <- read_sf("BPE/data_communes_au/REGION.shp", stringsAsFactors = FALSE, options = "ENCODING=UTF-8") %>%
   st_set_crs(2154) %>%
   filter(NOM_REG != "Corse")
 
 # -------------------- AU en sf ---------------------
-communes_2019 <- read_sf("data_communes_au/COMMUNE.shp", stringsAsFactors = FALSE, options = "ENCODING=UTF-8") %>%
+communes_2019 <- read_sf("BPE/data_communes_au/COMMUNES.shp", stringsAsFactors = FALSE, options = "ENCODING=UTF-8") %>%
   st_set_crs(2154) # epsg : 2154, Lambert 93
-communes_2019_au_2010 <- read_excel("data_communes_au/AU2010_au_01-01-2019.xls", sheet = "data_composition_communale")
-au_2010_2019 <- read_excel("data_communes_au/AU2010_au_01-01-2019.xls", sheet = "data_AU2010")
+communes_2019_au_2010 <- read_excel("BPE/data_communes_au/AU2010_au_01-01-2019.xls", sheet = "data_composition_communale")
+au_2010_2019 <- read_excel("BPE/data_communes_au/AU2010_au_01-01-2019.xls", sheet = "data_AU2010")
 
 # lier les informations sur les AU à la composition communale, en l'occurrence "TAU2016", soit la tranche d'aire urbaine 2016
 au_2010_2019_v2 <- au_2010_2019 %>%
@@ -63,8 +63,8 @@ tm_shape(shp = au_2010_pop) +
 
 
 # -------------------- données BPE : read ---------------------
-bpe_evolution <- read.dbf("data/bpe1318_nb_equip_au.dbf")
-metadonnees <- read.csv("data/varmod_bpe1318_nb_equip_au.csv", encoding = "UTF-8")
+bpe_evolution <- read.dbf("BPE/data/bpe1318_nb_equip_au.dbf")
+metadonnees <- read.csv("BPE/data/varmod_bpe1318_nb_equip_au.csv", encoding = "UTF-8")
 metadonnees <- metadonnees %>%
   mutate(COD_MOD = as.character(COD_MOD))
 
@@ -73,88 +73,152 @@ bpe_evolution <- bpe_evolution %>% select(-COD_VAR, -LIB_VAR, -TYPE_VAR.C.8, -LO
 rm(metadonnees)
 
 # -------------------- La Poste ---------------------
+# construction d'un tableau spécifique
 bpe_poste <- bpe_evolution %>%
   filter(TYPEQU %in% c("A206", "A207", "A208")) %>%
   left_join(., y = au_2010_pop, by = c("ID_AU2010" = "AU2010")) %>%
   filter(!is.na(population)) %>%
   st_as_sf()
 
-# densité pour 10 000 habitants
+# enrichissement du tableau : densité pour 10 000 habitants
 bpe_poste <- bpe_poste %>%
   mutate(densite_2013 = NB_2013/population*10000,
          densite_2018 = NB_2018/population*10000,
          TCAM = TCAM(datefin = NB_2018, datedebut = NB_2013, nbannee = 5))
 
 
-# les bureaux de postes : cartographie des densités en 2013 et 2018
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A208") %>% gather(key = "densite", value = "donnees", densite_2013:densite_2018), 
-          aes(fill = donnees), show.legend = TRUE) +
-  scale_fill_viridis_c(name = "pour 10 000 hab.", option = "magma", direction = -1) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~densite) +
-  ggtitle("Agences postales communales")
+# ------------> corrélations par type d'activité postale (hors Paris)
 
 bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
-  select(population, densite_2013, densite_2018) %>% st_drop_geometry() %>% ggpairs()
+  select(population, densite_2013, densite_2018) %>%
+  st_drop_geometry() %>% 
+  ggpairs()
 
 bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
-  select(population, TCAM) %>% st_drop_geometry() %>% ggpairs()
+  select(population, TCAM) %>% 
+  st_drop_geometry() %>% 
+  ggpairs()
 
-# évolution des éléments "postaux" les uns par rapports aux autres
+
+
+# ------------> densité 2018 des activités postales : activité par activité
+
+# ------------------------------------- Les bureaux de poste :
+classes <- bpe_poste %>% filter(TYPEQU == "A206") 
+classes <- classIntervals(var = classes$densite_2018, n = 5, style = "jenks")
+
+# France : cartographie
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% gather(key = "densite", value = "donnees", densite_2013:densite_2018), 
-          aes(fill = TCAM), show.legend = TRUE) +
-  scale_fill_gradient2(name = "TCAM") +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  facet_wrap(~ LIB_MOD.C.87)
-
-
-# zoom sur la région Grand-Est
-guides <- st_bbox(france %>% filter(INSEE_REG == "44"))
-
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% gather(key = "densite", value = "donnees", densite_2013:densite_2018), 
-          aes(fill = TCAM), show.legend = TRUE) +
-  scale_fill_distiller(name = "TCAM", palette = "RdBu") +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~ LIB_MOD.C.87)
-
-# par type : Grand Est
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206") %>% gather(key = "densite", value = "donnees", densite_2013:densite_2018), 
-          aes(fill = donnees), show.legend = TRUE) +
-  scale_fill_viridis_c(name = "pour 10 000 hab.", option = "magma", direction = -1) +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~densite) +
   ggtitle("Bureaux de poste")
 
-# TCAM mais "de près" en considérant un découpage préalable : bureaux de poste
+
+# Grand Est : cartographie
+guides <- st_bbox(france %>% filter(INSEE_REG == "44")) # zoom sur la région Grand-Est
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Bureaux de poste")
+
+
+
+# ------------------------------------- Les relais de poste :
+classes <- bpe_poste %>% filter(TYPEQU == "A207") 
+classes <- classIntervals(var = classes$densite_2018, n = 5, style = "jenks")
+
+# France : cartographie
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Relais de poste")
+
+
+# Grand Est : cartographie
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Relais de poste")
+
+
+# ------------------------------------- Les agences postales :
+classes <- bpe_poste %>% filter(TYPEQU == "A208") 
+classes <- classIntervals(var = classes$densite_2018, n = 5, style = "jenks")
+
+# France : cartographie
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Agences postales communales")
+
+
+# Grand Est : cartographie
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Relais de poste")
+
+
+
+
+# -----------------------------------------arret reprise--------------------------------------------------------------
+
+# TCAM en considérant un découpage préalable : bureaux de poste
 classes <- bpe_poste %>% filter(TYPEQU == "A206") 
 classes <- classIntervals(var = classes$TCAM, n = 7, style = "jenks")
-classes$brks[2:8]
+classes$brks[1:8]
 # par type : Grand Est
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
