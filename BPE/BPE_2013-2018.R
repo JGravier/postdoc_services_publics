@@ -68,7 +68,7 @@ tm_shape(shp = au_2010_pop) +
 
 # -------------------- données BPE : read ---------------------
 bpe_evolution <- read.dbf("BPE/data/bpe1318_nb_equip_au.dbf")
-metadonnees <- read.dbf("BPE/data/varmod_bpe1318_nb_equip_au.dbf", encoding = "UTF-8")
+metadonnees <- read.dbf("BPE/data/varmod_bpe1318_nb_equip_au.dbf")
 metadonnees <- metadonnees %>%
   mutate(COD_MOD = as.character(COD_MOD))
 
