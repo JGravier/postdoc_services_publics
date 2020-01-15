@@ -227,7 +227,7 @@ ggplot() +
 
 
 
-# ----------------> à reprendre
+# ----------------> à reprendre à partir de là !!
 
 # TCAM en considérant un découpage préalable : bureaux de poste
 classes <- bpe_poste %>% filter(TYPEQU == "A206") 
