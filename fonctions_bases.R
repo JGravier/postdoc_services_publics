@@ -1,23 +1,5 @@
 library(ggthemes)
 
-
-theme_julie <- function(){
-  julie <- theme_igray() +
-    theme(plot.subtitle = element_text(face = "italic"), 
-          plot.caption = element_text(size = 8), 
-          axis.title = element_text(size = 12), 
-          axis.text = element_text(size = 9.5), 
-          plot.title = element_text(size = 15, 
-                                    face = "bold", hjust = 0.5), legend.text = element_text(size = 11.5), 
-          legend.title = element_text(size = 11.7), 
-          plot.background = element_rect(fill = "gray97"), 
-          legend.key = element_rect(fill = "gray97"), 
-          legend.background = element_rect(fill = "gray97"), 
-          legend.position = "bottom", legend.direction = "horizontal")
-  julie
-}
-
-
 '%ni%' <- Negate('%in%')
 
 TCAM <- function(datefin, datedebut, nbannee){
@@ -46,8 +28,6 @@ scale_fill_divergent <- function(..., low = scales::muted("blue"),
                                 midpoint = midpoint, space = space,
                                 na.value = na.value, guide = guide)
 }
-
-palette_wesanderson1 <- wesanderson::wes_palette(name = "Zissou1", n = 50, type = "continuous")
 
 str_sub_left <- function(x, n){
   sapply(x, function(xx)
@@ -87,4 +67,22 @@ tab_ecart_pearson_residus <- function(x){
   x <- x$residuals #  écarts de Pearson = écarts standardisés
   # <=> (tab observé - tab d'indépendance) / sqrt(d'indépendance)
   as.data.frame(x)
+}
+
+
+# thème personnel
+theme_julie <- function(){
+  julie <- theme_igray() +
+    theme(plot.subtitle = element_text(face = "italic"), 
+          plot.caption = element_text(size = 8), 
+          axis.title = element_text(size = 12), 
+          axis.text = element_text(size = 9.5), 
+          plot.title = element_text(size = 15, 
+                                    face = "bold", hjust = 0.5), legend.text = element_text(size = 11.5), 
+          legend.title = element_text(size = 11.7), 
+          plot.background = element_rect(fill = "gray97"), 
+          legend.key = element_rect(fill = "gray97"), 
+          legend.background = element_rect(fill = "gray97"), 
+          legend.position = "bottom", legend.direction = "horizontal")
+  julie
 }
