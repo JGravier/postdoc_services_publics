@@ -32,7 +32,7 @@ au_2010_2019_v2 <- au_2010_2019 %>%
 communes_2019_au_2010 <- left_join(x = communes_2019_au_2010, y = au_2010_2019_v2, by = "AU2010")
 rm(au_2010_2019_v2)
 
-# on a pas le même nombre de communes dans les deux tableaux (.shp = 34886 et .xls = 34970), 
+# on n'a pas le même nombre de communes dans les deux tableaux (.shp = 34886 et .xls = 34970), 
 # est-ce dû au fait que l'on a les communes situées hors France métropolitaine dans le fichier sur les aires urbaines ?
 communes_2019_au_2010 <- communes_2019_au_2010 %>%
   filter(DEP %ni% c("971", "972", "973", "974", "976")) %>% # on retire les communes appartenant aux DOM
@@ -57,7 +57,7 @@ au_2010_pop <- communes_2019_au_2010 %>%
   group_by(AU2010) %>%
   summarise(population = sum(POPULATION)) %>%
   left_join(x = ., y = au_2010_2019, by = "AU2010") %>%
-  st_cast(x = ., to = "MULTIPOLYGON") # ce qui est bien pour l'export en shp
+  st_cast(x = ., to = "MULTIPOLYGON") # ce qui est bien pour faire de l'export en shp si besoin
 
 # vérification de la validité de la création des aires urbaines
 tmap_mode("view")
