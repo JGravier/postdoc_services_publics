@@ -301,6 +301,7 @@ ggplot() +
         axis.ticks = element_blank(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Agences postales communales")
 
 # Région Grand Est : cartographie (zoom)
@@ -319,6 +320,7 @@ ggplot() +
         axis.ticks = element_blank(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Agences postales communales")
 
 
@@ -347,7 +349,8 @@ bpe_poste <- bpe_poste %>%
                              ifelse(TAU2016 == "10", "Paris", "b"))))
 
 
-# Trois taille de villes : petite, moyenne, grande
+#----------- Trois taille de villes : petite, moyenne, grande
+# distributions
 bpe_poste %>%
   filter(TAU2016 != "10" & TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
   ggplot(aes(x = reorder(TAU2016_group, reordonner), y = TCAM, fill = TAU2016_group)) +
@@ -358,15 +361,14 @@ bpe_poste %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier | UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
   facet_wrap(~ LIB_MOD)
 
-
-# sans les valeurs extrêmes de croissance
+# distributions sans les valeurs extrêmes de croissance
 bpe_poste %>%
-  filter(TAU2016 != "10" & TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
-  filter(TCAM < 100) %>%
+  filter(TAU2016 != "10" & TCAM != "NaN") %>% 
+  filter(TCAM < 100) %>% # hors valeurs extrêmes
   ggplot(aes(x = reorder(TAU2016_group, reordonner), y = TCAM, fill = TAU2016_group)) +
   geom_violin() +
   theme_julie() +
@@ -375,30 +377,35 @@ bpe_poste %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier | UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
   facet_wrap(~ LIB_MOD)
 
-# ANOVA sur ces groupes : les bureaux de postes, puis relais, puis agences postales
+# ANOVA sur ce groupe de villes par type d'activité
 AOV_bureau_poste <- bpe_poste %>%
-  filter(TAU2016 != "10" & TYPEQU == "A208") %>% st_drop_geometry()
-
-AOV_bureau_poste <- AOV_bureau_poste %>% filter(TCAM != Inf) # nécessaire relais poste
+  filter(TAU2016 != "10" & TYPEQU == "A206") %>% st_drop_geometry()
 AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016_group)
 summary(AOV_bureau_poste_2)
 
+# tableau des moyennes de classe de taille de villes
 Tab_AOV_bureau_poste <- AOV_bureau_poste %>%
   select(TAU2016_group, TCAM) %>%
   group_by(TAU2016_group) %>%
   summarise(Nombre = n(), Moyenne = mean(TCAM, na.rm = TRUE))
 
-write.csv2(Tab_AOV_bureau_poste, "sorties/LaPoste/ANOVA_agence_postale.csv")
-rm(Tab_AOV_bureau_poste)
+write.csv2(Tab_AOV_bureau_poste, "BPE/sorties/LaPoste/ANOVA_3_tail-villes_bureaux_tab_mean.csv")
 
-Summary_AOV <- summary(AOV_bureau_poste_2)
-Summary_AOV <- unlist(Summary_AOV)
-SCT <- Summary_AOV[3] + Summary_AOV[4] # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
-R_deux <- Summary_AOV[3]/SCT
+# résumé de l'ANOVA, calcul r² et sortie
+summary_AOV_poste <- summary(AOV_bureau_poste_2)
+summary_AOV_poste <- unlist(summary_AOV_poste)
+r_deux <- summary_AOV_poste[3]/(summary_AOV_poste[3] + summary_AOV_poste[4]) # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
+
+sortie_summary <- as.data.frame(summary_AOV_poste) %>% t() %>% as.data.frame()
+sortie_summary$r_deux <- r_deux
+
+write.csv2(sortie_summary, "BPE/sorties/LaPoste/ANOVA_3_tail-villes_bureaux_summary.csv")
+
+rm(Tab_AOV_bureau_poste, sortie_summary, AOV_bureau_poste, AOV_bureau_poste_2)
 
 # selon typologie de l'Insee des Aires Urbaines : TAU
 bpe_poste %>%
