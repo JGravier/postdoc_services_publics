@@ -1,0 +1,330 @@
+/3.0
+(ODB.1
+	FirstRootClassName:	"Legend"
+	Roots:	2
+	Version:	30
+)
+
+(Legend.2
+	LegType:	0x08
+	ClassType:	0x03
+	FieldNames:	3
+	Symbols:	4
+	Class:	46
+	Class:	47
+	Class:	48
+	Class:	49
+	Class:	50
+	Class:	51
+	StdDevs:	1.00000000000000
+	NullSym:	52
+	NullValues:	55
+	StatValues:	56
+	Precision:	-3
+)
+
+(AVStr.3
+	S:	"Nature"
+)
+
+(SymList.4
+	Child:	5
+	Child:	12
+	Child:	15
+	Child:	18
+	Child:	36
+	Child:	39
+)
+
+(BMkSym.5
+	Color:	6
+	BgColor:	7
+	Font:	8
+	Size:	4.00000000000000
+	Pattern:	37
+	Angle:	360.00000000000000
+)
+
+(TClr.6
+)
+
+(TClr.7
+	Name:	"Transparent"
+)
+
+(NFont.8
+	Family:	9
+	Name:	10
+	Style:	11
+	Weight:	1
+	Wideness:	1
+)
+
+(AVStr.9
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.10
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.11
+	S:	"Normal"
+)
+
+(BMkSym.12
+	Color:	13
+	BgColor:	14
+	Font:	8
+	Size:	8.00000000000000
+	Pattern:	37
+	Angle:	360.00000000000000
+)
+
+(TClr.13
+)
+
+(TClr.14
+	Name:	"Transparent"
+)
+
+(BMkSym.15
+	Color:	16
+	BgColor:	17
+	Font:	8
+	Size:	8.00000000000000
+	Pattern:	37
+	Angle:	360.00000000000000
+)
+
+(TClr.16
+	Red:	0x7878
+	Green:	0x7878
+	Blue:	0x7878
+)
+
+(TClr.17
+	Name:	"Transparent"
+)
+
+(CMkSym.18
+	Color:	19
+	Symbols:	20
+	BgColor:	35
+	Size:	8.00000000000000
+)
+
+(TClr.19
+	Red:	0x7878
+	Green:	0x7878
+	Blue:	0x7878
+)
+
+(SymList.20
+	Child:	21
+	Child:	28
+)
+
+(BMkSym.21
+	Color:	22
+	BgColor:	23
+	Font:	24
+	Size:	8.00000000000000
+	Pattern:	37
+	Angle:	360.00000000000000
+)
+
+(TClr.22
+	Red:	0x7878
+	Green:	0x7878
+	Blue:	0x7878
+)
+
+(TClr.23
+	Name:	"Transparent"
+)
+
+(NFont.24
+	Family:	25
+	Name:	26
+	Style:	27
+	Weight:	1
+	Wideness:	1
+)
+
+(AVStr.25
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.26
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.27
+	S:	"Normal"
+)
+
+(BMkSym.28
+	Color:	29
+	ColorLock:	1
+	BgColor:	30
+	Font:	31
+	Size:	8.00000000000000
+	Pattern:	85
+	Angle:	360.00000000000000
+)
+
+(TClr.29
+)
+
+(TClr.30
+	Name:	"Transparent"
+)
+
+(NFont.31
+	Family:	32
+	Name:	33
+	Style:	34
+	Weight:	1
+	Wideness:	1
+)
+
+(AVStr.32
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.33
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.34
+	S:	"Normal"
+)
+
+(TClr.35
+	Name:	"Transparent"
+)
+
+(BMkSym.36
+	Color:	37
+	BgColor:	38
+	Font:	8
+	Size:	4.00000000000000
+	Pattern:	37
+	Angle:	360.00000000000000
+)
+
+(TClr.37
+)
+
+(TClr.38
+	Name:	"Transparent"
+)
+
+(BMkSym.39
+	Color:	40
+	BgColor:	41
+	Font:	42
+	Size:	8.00000000000000
+	Pattern:	35
+	Angle:	360.00000000000000
+)
+
+(TClr.40
+	Name:	"Transparent"
+)
+
+(TClr.41
+	Name:	"Transparent"
+)
+
+(NFont.42
+	Family:	43
+	Name:	44
+	Style:	45
+	Weight:	1
+	Wideness:	1
+)
+
+(AVStr.43
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.44
+	S:	"ESRI Geometric Symbols"
+)
+
+(AVStr.45
+	S:	"Normal"
+)
+
+(LClass.46
+	IsText:	1
+	Label:	"Changement d'attribut"
+	MinStr:	"Changement d'attribut"
+	MaxStr:	"Changement d'attribut"
+	Precision:	-3
+)
+
+(LClass.47
+	IsText:	1
+	Label:	"Gare de fret"
+	MinStr:	"Gare de fret"
+	MaxStr:	"Gare de fret"
+	Precision:	-3
+)
+
+(LClass.48
+	IsText:	1
+	Label:	"Gare de voyageurs"
+	MinStr:	"Gare de voyageurs"
+	MaxStr:	"Gare de voyageurs"
+	Precision:	-3
+)
+
+(LClass.49
+	IsText:	1
+	Label:	"Gare de voyageurs et de fret"
+	MinStr:	"Gare de voyageurs et de fret"
+	MaxStr:	"Gare de voyageurs et de fret"
+	Precision:	-3
+)
+
+(LClass.50
+	IsText:	1
+	Label:	"Intersection du réseau ferré"
+	MinStr:	"Intersection du réseau ferré"
+	MaxStr:	"Intersection du réseau ferré"
+	Precision:	-3
+)
+
+(LClass.51
+	IsNoData:	1
+	IsText:	1
+	Label:	"Pas de données"
+	Precision:	-3
+)
+
+(BMkSym.52
+	Color:	53
+	BgColor:	54
+	Font:	42
+	Size:	8.00000000000000
+	Pattern:	35
+	Angle:	360.00000000000000
+)
+
+(TClr.53
+	Name:	"Transparent"
+)
+
+(TClr.54
+	Name:	"Transparent"
+)
+
+(NameDict.55
+)
+
+(NameDict.56
+)
+

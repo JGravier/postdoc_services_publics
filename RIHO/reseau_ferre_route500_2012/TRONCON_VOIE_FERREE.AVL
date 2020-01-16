@@ -1,0 +1,274 @@
+/3.0
+(ODB.1
+	FirstRootClassName:	"Legend"
+	Roots:	2
+	Version:	30
+)
+
+(Legend.2
+	SymType:	0x01
+	LegType:	0x08
+	ClassType:	0x03
+	FieldNames:	3
+	Symbols:	4
+	Class:	21
+	Class:	22
+	Class:	23
+	Class:	24
+	StdDevs:	1.00000000000000
+	NullSym:	25
+	NullValues:	27
+	StatValues:	28
+	Precision:	-3
+)
+
+(AVStr.3
+	S:	"NATURE"
+)
+
+(SymList.4
+	Child:	5
+	Child:	11
+	Child:	13
+	Child:	19
+)
+
+(CLnSym.5
+	Color:	6
+	Size:	0.10000000000000
+	Symbols:	7
+)
+
+(TClr.6
+)
+
+(SymList.7
+	Child:	8
+	Child:	9
+)
+
+(BLnSym.8
+	Color:	6
+	Width:	0.10000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+)
+
+(VLnHsh.9
+	Color:	6
+	Size:	0.10000000000000
+	AltSize:	0.50000000000000
+	Interval:	3.60000000000000
+	BasicLine:	10
+)
+
+(BLnSym.10
+	Color:	6
+	Width:	0.50000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+)
+
+(BLnSym.11
+	Color:	12
+	Width:	2.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+)
+
+(TClr.12
+)
+
+(CLnSym.13
+	Color:	14
+	Size:	0.10000000000000
+	Symbols:	15
+)
+
+(TClr.14
+)
+
+(SymList.15
+	Child:	16
+	Child:	17
+)
+
+(BLnSym.16
+	Color:	14
+	Width:	0.10000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+)
+
+(VLnHsh.17
+	Color:	14
+	Size:	0.10000000000000
+	AltSize:	0.50000000000000
+	Interval:	3.60000000000000
+	BasicLine:	18
+)
+
+(BLnSym.18
+	Color:	14
+	Width:	0.50000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+)
+
+(BLnSym.19
+	Color:	20
+	Width:	0.10000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+)
+
+(TClr.20
+	Name:	"Transparent"
+)
+
+(LClass.21
+	IsText:	1
+	Label:	"Inconnue"
+	MinStr:	"Inconnue"
+	MaxStr:	"Inconnue"
+	Precision:	-3
+)
+
+(LClass.22
+	IsText:	1
+	Label:	"TGV"
+	MinStr:	"TGV"
+	MaxStr:	"TGV"
+	Precision:	-3
+)
+
+(LClass.23
+	IsText:	1
+	Label:	"Voie normale"
+	MinStr:	"Voie normale"
+	MaxStr:	"Voie normale"
+	Precision:	-3
+)
+
+(LClass.24
+	IsNoData:	1
+	IsText:	1
+	Label:	"Pas de données"
+	Precision:	-3
+)
+
+(BLnSym.25
+	Color:	26
+	Width:	0.10000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+	Pattern:	0.00000000000000
+)
+
+(TClr.26
+	Name:	"Transparent"
+)
+
+(NameDict.27
+)
+
+(NameDict.28
+)
+
