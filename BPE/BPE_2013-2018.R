@@ -68,7 +68,7 @@ tm_shape(shp = au_2010_pop) +
 
 # -------------------- données BPE : read ---------------------
 bpe_evolution <- read.dbf("BPE/data/bpe1318_nb_equip_au.dbf", as.is = TRUE)
-Encoding(bpe_evolution$TYPEQU) <- "Latin1"
+Encoding(bpe_evolution$TYPEQU) <- "UTF-08"
 metadonnees <- read.dbf("BPE/data/varmod_bpe1318_nb_equip_au.dbf", as.is = TRUE)
 metadonnees <- metadonnees %>%
   mutate(COD_MOD = as.character(COD_MOD))
@@ -90,7 +90,7 @@ bpe_poste <- bpe_evolution %>%
 bpe_poste <- bpe_poste %>%
   mutate(densite_2013 = NB_2013/population*10000, # densité pour 10 000 habitants 
          densite_2018 = NB_2018/population*10000, # densité pour 10 000 habitants
-         NB_2013_2 = ifelse(NB_2013 == 0 & NB_2018 != 0, NB_2013 == 0.001, NB_2013),
+         NB_2013_2 = ifelse(NB_2013 == 0 & NB_2018 != 0, 0.001, NB_2013),
          # nécessaire de transformer les 0 en 0.001 dans les cas où il n'y avait pas d'activité postale en 2013
          # mais qu'il y en a une en 2018. Sinon le calcul des TCAM ne peut pas être effectué dans ce cas de croissance
          TCAM = TCAM(datefin = NB_2018, datedebut = NB_2013_2, nbannee = 5)) # taux de croissance annuel moyen
@@ -287,7 +287,7 @@ classes$brks[2] <- -99 # changer la discrétisation de la première classe [-100
 # pour être en mesure d'utiliser les breaks dans le geom_sf()
 
 # France : cartographie
-# NOTE : revoir la visu sémio
+# NOTE : revoir la visu sémio & le découpage en classe
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
@@ -322,18 +322,18 @@ ggplot() +
   ggtitle("Agences postales communales")
 
 
-# ----------------- deuxième temps explo Poste ---------------
-# il est nécessaire de faire préalablement des explorations graphiques
-# selon différents critères : taille des villes, évolution démo précédente (type de décroissance),
-# situation géographique (trouver des indicateurs résumés de distance, selon appartenance terr.), etc.
+# ------------------ evo. Poste et hypothèses d'évolution ---------------------
+# explorations de l'évolution selon différents critères : taille des villes, évolution démo précédente (décroissance/croissance),
+# situation géographique (indicateurs de distance à un/plusieurs éléments, appartenance territoriale), etc.
+
+
+# ----------------------- analyse selon la taille de villes (hors Paris)
+# enrichissement du tableau relatif aux activités postales
 bpe_poste <- bpe_poste %>%
-  mutate(TAU2016_group = ifelse(TAU2016 %in% c("01", "02", "03", "04"), "petite", # groupe de inf à 15 000 à 35 000 hab
-                                ifelse(TAU2016 %in% c("08", "09"), "grande",
-                                ifelse(TAU2016 == "10", "Paris", "moyenne")))) %>%
-  mutate(reordonner = ifelse(TAU2016 %in% c("01", "02", "03", "04"), "a", # groupe de inf à 15 000 à 35 000 hab
-                                ifelse(TAU2016 %in% c("08", "09"), "c",
-                                       ifelse(TAU2016 == "10", "Paris", "b")))) %>%
-  mutate(TAU2016_Insee = ifelse(TAU2016 == "01", "1: < 15.000",
+  mutate(TAU2016_group = ifelse(TAU2016 %in% c("01", "02", "03", "04"), "petite", # petite : groupe de taille [inf à 15 000 à 35 000 hab)
+                                ifelse(TAU2016 %in% c("08", "09"), "grande", # grande : 200.000 à 2.400.000 hab
+                                ifelse(TAU2016 == "10", "Paris", "moyenne")))) %>% # moyenne : entre 35.000 et 200.000 hab
+  mutate(TAU2016_Insee = ifelse(TAU2016 == "01", "1: < 15.000", # les types de tailles d'AU selon l'Insee
                                 ifelse(TAU2016 == "02", "2: 15.000-20.000",
                                        ifelse(TAU2016 == "03", "3: 20.000-25.000",
                                               ifelse(TAU2016 == "04", "4: 25.000-35.000",
@@ -341,12 +341,15 @@ bpe_poste <- bpe_poste %>%
                                               ifelse(TAU2016 == "06", "6: 50.000-100.000",
                                               ifelse(TAU2016 == "07", "7: 100.000-200.000",
                                               ifelse(TAU2016 == "08", "8: 200.000-500.000",
-                                              ifelse(TAU2016 == "09", "9: 500.000-2.400.000", "Paris"))))))))))
+                                              ifelse(TAU2016 == "09", "9: 500.000-2.400.000", "Paris")))))))))) %>%
+  mutate(reordonner = ifelse(TAU2016 %in% c("01", "02", "03", "04"), "a",
+                             ifelse(TAU2016 %in% c("08", "09"), "c",
+                             ifelse(TAU2016 == "10", "Paris", "b"))))
 
-# ----------------------- taille de villes
-# selon 3 groupes de taille : perso
+
+# Trois taille de villes : petite, moyenne, grande
 bpe_poste %>%
-  filter(TAU2016 != "10") %>% # enlever Paris car peu pertinent il me semble
+  filter(TAU2016 != "10" & TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
   ggplot(aes(x = reorder(TAU2016_group, reordonner), y = TCAM, fill = TAU2016_group)) +
   geom_violin() +
   theme_julie() +
@@ -357,7 +360,24 @@ bpe_poste %>%
   ylab("Taux de croissance annuel moyen") +
   labs(caption = "J. Gravier | UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
-  facet_wrap(~ LIB_MOD.C.87)
+  facet_wrap(~ LIB_MOD)
+
+
+# sans les valeurs extrêmes de croissance
+bpe_poste %>%
+  filter(TAU2016 != "10" & TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
+  filter(TCAM < 100) %>%
+  ggplot(aes(x = reorder(TAU2016_group, reordonner), y = TCAM, fill = TAU2016_group)) +
+  geom_violin() +
+  theme_julie() +
+  scale_fill_tableau(name = "Taille des villes", palette = "Tableau 10") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  ylab("Taux de croissance annuel moyen") +
+  labs(caption = "J. Gravier | UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
+  facet_wrap(~ LIB_MOD)
 
 # ANOVA sur ces groupes : les bureaux de postes, puis relais, puis agences postales
 AOV_bureau_poste <- bpe_poste %>%
