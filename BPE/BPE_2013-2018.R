@@ -324,7 +324,7 @@ ggplot() +
   ggtitle("Agences postales communales")
 
 
-# ------------------ evo. Poste et hypothèses d'évolution ---------------------
+# ------------------ evo. poste et hypothèses d'évolution ---------------------
 # explorations de l'évolution selon différents critères : taille des villes, évolution démo précédente (décroissance/croissance),
 # situation géographique (indicateurs de distance à un/plusieurs éléments, appartenance territoriale), etc.
 
@@ -350,7 +350,7 @@ bpe_poste <- bpe_poste %>%
 
 
 #----------- Trois taille de villes : petite, moyenne, grande
-# distributions
+#### distributions
 bpe_poste %>%
   filter(TAU2016 != "10" & TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
   ggplot(aes(x = reorder(TAU2016_group, reordonner), y = TCAM, fill = TAU2016_group)) +
@@ -381,7 +381,9 @@ bpe_poste %>%
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
   facet_wrap(~ LIB_MOD)
 
-# ANOVA sur ce groupe de villes par type d'activité
+
+
+#### ANOVA sur ce groupe de villes par type d'activité
 AOV_bureau_poste <- bpe_poste %>%
   filter(TAU2016 != "10" & TYPEQU == "A206") %>% st_drop_geometry()
 AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016_group)
@@ -392,7 +394,6 @@ Tab_AOV_bureau_poste <- AOV_bureau_poste %>%
   select(TAU2016_group, TCAM) %>%
   group_by(TAU2016_group) %>%
   summarise(Nombre = n(), Moyenne = mean(TCAM, na.rm = TRUE))
-
 write.csv2(Tab_AOV_bureau_poste, "BPE/sorties/LaPoste/ANOVA_3_tail-villes_bureaux_tab_mean.csv")
 
 # résumé de l'ANOVA, calcul r² et sortie
@@ -402,14 +403,15 @@ r_deux <- summary_AOV_poste[3]/(summary_AOV_poste[3] + summary_AOV_poste[4]) # r
 
 sortie_summary <- as.data.frame(summary_AOV_poste) %>% t() %>% as.data.frame()
 sortie_summary$r_deux <- r_deux
-
 write.csv2(sortie_summary, "BPE/sorties/LaPoste/ANOVA_3_tail-villes_bureaux_summary.csv")
 
 rm(Tab_AOV_bureau_poste, sortie_summary, AOV_bureau_poste, AOV_bureau_poste_2)
 
-# selon typologie de l'Insee des Aires Urbaines : TAU
+
+#----------- 9 tailles de villes : typologie de l'Insee TAU2016 (sans Paris)
+#### distributions
 bpe_poste %>%
-  filter(TAU2016 != "10") %>% # enlever Paris car peu pertinent il me semble
+  filter(TAU2016 != "10" & TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
   ggplot(aes(x = TAU2016_Insee, y = TCAM, fill = TAU2016_Insee)) +
   geom_violin() +
   theme_julie() +
@@ -418,35 +420,58 @@ bpe_poste %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier | UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
-  facet_wrap(~ LIB_MOD.C.87)
+  facet_wrap(~ LIB_MOD)
 
-# ANOVA sur ces groupes : les bureaux de postes, puis relais, puis agences postales
+# distributions sans les valeurs extrêmes de croissance
+bpe_poste %>%
+  filter(TAU2016 != "10" & TCAM != "NaN") %>% 
+  filter(TCAM < 100) %>% # hors valeurs extrêmes
+  ggplot(aes(TAU2016_Insee, y = TCAM, fill = TAU2016_Insee)) +
+  geom_violin() +
+  theme_julie() +
+  scale_fill_tableau(name = "Taille des villes", palette = "Tableau 20") +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank()) +
+  ylab("Taux de croissance annuel moyen") +
+  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
+  facet_wrap(~ LIB_MOD)
+
+
+#### ANOVA sur ce groupe de villes par type d'activité
 AOV_bureau_poste <- bpe_poste %>%
   filter(TAU2016 != "10" & TYPEQU == "A206") %>% st_drop_geometry()
-
-AOV_bureau_poste <- AOV_bureau_poste %>% filter(TCAM != Inf) # nécessaire relais poste
-AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016)
+AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016_Insee)
 summary(AOV_bureau_poste_2)
 
+# tableau des moyennes de classe de taille de villes
 Tab_AOV_bureau_poste <- AOV_bureau_poste %>%
-  select(TAU2016, TCAM) %>%
-  group_by(TAU2016) %>%
+  select(TAU2016_group, TCAM) %>%
+  group_by(TAU2016_group) %>%
   summarise(Nombre = n(), Moyenne = mean(TCAM, na.rm = TRUE))
+write.csv2(Tab_AOV_bureau_poste, "BPE/sorties/LaPoste/ANOVA_9_tail-villes_bureaux_tab_mean.csv")
 
-write.csv2(Tab_AOV_bureau_poste, "sorties/LaPoste/ANOVA_TAU_INSEE_agence_postale.csv")
-rm(Tab_AOV_bureau_poste)
+# résumé de l'ANOVA, calcul r² et sortie
+summary_AOV_poste <- summary(AOV_bureau_poste_2)
+summary_AOV_poste <- unlist(summary_AOV_poste)
+r_deux <- summary_AOV_poste[3]/(summary_AOV_poste[3] + summary_AOV_poste[4]) # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
 
-Summary_AOV <- summary(AOV_bureau_poste_2)
-Summary_AOV <- unlist(Summary_AOV)
-SCT <- Summary_AOV[3] + Summary_AOV[4] # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
-R_deux <- Summary_AOV[3]/SCT
+sortie_summary <- as.data.frame(summary_AOV_poste) %>% t() %>% as.data.frame()
+sortie_summary$r_deux <- r_deux
+write.csv2(sortie_summary, "BPE/sorties/LaPoste/ANOVA_9_tail-villes_bureaux_summary.csv")
+
+rm(Tab_AOV_bureau_poste, sortie_summary, AOV_bureau_poste, AOV_bureau_poste_2)
+
 
 # note personnelle : en fait, il ne faut pas travailler forcément sur l'évolution mais sur le changement
-# là où il y a changement, comment se fait-il ? (donc en virant tous les TCAM = 0)
+# là où il y a changement, comment se fait-il ? (donc en virant tous les TCAM = 0 %)
 # ANOVA sur les 3 grpes de villes en prenant QUE le changement 
 # des bureaux de postes, puis relais, puis agences postales
+
+# ------------------ changement poste et hypothèses d'évolution ---------------------
 AOV_bureau_poste <- bpe_poste %>%
   filter(TAU2016 != "10" & TYPEQU == "A208" & TCAM != 0) %>% st_drop_geometry()
 
