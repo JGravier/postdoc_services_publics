@@ -324,12 +324,26 @@ ggplot() +
   ggtitle("Agences postales communales")
 
 
+# ------------------ corrélations linéaires : évo. ---------------------
+### Par type d'activité postale
+bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
+  select(population, TCAM) %>% 
+  st_drop_geometry() %>% 
+  ggpairs()
+
+# en virant les outliers
+bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris" & TCAM > -50 & TCAM < 200) %>%
+  select(population, TCAM) %>% 
+  st_drop_geometry() %>% 
+  ggpairs()
+
+
 # ------------------ evo. poste et hypothèses d'évolution ---------------------
 # explorations de l'évolution selon différents critères : taille des villes, évolution démo précédente (décroissance/croissance),
 # situation géographique (indicateurs de distance à un/plusieurs éléments, appartenance territoriale), etc.
 
 
-# ----------------------- analyse selon la taille de villes (hors Paris)
+# ----------------------- analyse selon la taille des villes (hors Paris)
 # enrichissement du tableau relatif aux activités postales
 bpe_poste <- bpe_poste %>%
   mutate(TAU2016_group = ifelse(TAU2016 %in% c("01", "02", "03", "04"), "petite", # petite : groupe de taille [inf à 15 000 à 35 000 hab)
@@ -349,7 +363,7 @@ bpe_poste <- bpe_poste %>%
                              ifelse(TAU2016 == "10", "Paris", "b"))))
 
 
-#----------- Trois taille de villes : petite, moyenne, grande
+#-------------------------- Trois tailles de villes : petite, moyenne, grande
 #### distributions
 bpe_poste %>%
   filter(TAU2016 != "10" & TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
@@ -383,9 +397,11 @@ bpe_poste %>%
 
 
 
-#### ANOVA sur ce groupe de villes par type d'activité
+#### ANOVA sur ce groupe de tailles villes par type d'activité
 AOV_bureau_poste <- bpe_poste %>%
-  filter(TAU2016 != "10" & TYPEQU == "A206") %>% st_drop_geometry()
+  filter(TAU2016 != "10" & TYPEQU == "A206") %>% 
+  st_drop_geometry()
+
 AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016_group)
 summary(AOV_bureau_poste_2)
 
@@ -443,14 +459,15 @@ bpe_poste %>%
 
 #### ANOVA sur ce groupe de villes par type d'activité
 AOV_bureau_poste <- bpe_poste %>%
-  filter(TAU2016 != "10" & TYPEQU == "A206") %>% st_drop_geometry()
+  filter(TAU2016 != "10" & TYPEQU == "A206") %>% 
+  st_drop_geometry()
 AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016_Insee)
 summary(AOV_bureau_poste_2)
 
 # tableau des moyennes de classe de taille de villes
 Tab_AOV_bureau_poste <- AOV_bureau_poste %>%
-  select(TAU2016_group, TCAM) %>%
-  group_by(TAU2016_group) %>%
+  select(TAU2016_Insee, TCAM) %>%
+  group_by(TAU2016_Insee) %>%
   summarise(Nombre = n(), Moyenne = mean(TCAM, na.rm = TRUE))
 write.csv2(Tab_AOV_bureau_poste, "BPE/sorties/LaPoste/ANOVA_9_tail-villes_bureaux_tab_mean.csv")
 
@@ -466,99 +483,67 @@ write.csv2(sortie_summary, "BPE/sorties/LaPoste/ANOVA_9_tail-villes_bureaux_summ
 rm(Tab_AOV_bureau_poste, sortie_summary, AOV_bureau_poste, AOV_bureau_poste_2)
 
 
+# ------------------ changement poste et hypothèses d'évolution ---------------------
 # note personnelle : en fait, il ne faut pas travailler forcément sur l'évolution mais sur le changement
 # là où il y a changement, comment se fait-il ? (donc en virant tous les TCAM = 0 %)
 # ANOVA sur les 3 grpes de villes en prenant QUE le changement 
 # des bureaux de postes, puis relais, puis agences postales
 
-# ------------------ changement poste et hypothèses d'évolution ---------------------
-AOV_bureau_poste <- bpe_poste %>%
-  filter(TAU2016 != "10" & TYPEQU == "A208" & TCAM != 0) %>% st_drop_geometry()
 
-AOV_bureau_poste <- AOV_bureau_poste %>% filter(TCAM != Inf) # nécessaire relais poste
+#### étude des changements selon les 3 tailles de villes : petite, moyenne, grandes
+AOV_bureau_poste <- bpe_poste %>%
+  filter(TAU2016 != "10" & TYPEQU == "A206" & TCAM != 0) %>% # hors Paris, sans TCAM = 0 % et selon les types d'activités
+  st_drop_geometry()
+
 AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016_group)
 summary(AOV_bureau_poste_2)
 
+# tableau des moyennes de classe de taille de villes
 Tab_AOV_bureau_poste <- AOV_bureau_poste %>%
   select(TAU2016_group, TCAM) %>%
   group_by(TAU2016_group) %>%
   summarise(Nombre = n(), Moyenne = mean(TCAM, na.rm = TRUE))
+write.csv2(Tab_AOV_bureau_poste, "BPE/sorties/LaPoste/ANOVA_changement_3_tail-villes_bureaux_tab_mean.csv")
 
-write.csv2(Tab_AOV_bureau_poste, "sorties/LaPoste/ANOVA_agence_postale.csv")
-rm(Tab_AOV_bureau_poste)
+# résumé de l'ANOVA, calcul r² et sortie
+summary_AOV_poste <- summary(AOV_bureau_poste_2)
+summary_AOV_poste <- unlist(summary_AOV_poste)
+r_deux <- summary_AOV_poste[3]/(summary_AOV_poste[3] + summary_AOV_poste[4]) # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
 
-Summary_AOV <- summary(AOV_bureau_poste_2)
-Summary_AOV <- unlist(Summary_AOV)
-SCT <- Summary_AOV[3] + Summary_AOV[4] # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
-R_deux <- Summary_AOV[3]/SCT
+sortie_summary <- as.data.frame(summary_AOV_poste) %>% t() %>% as.data.frame()
+sortie_summary$r_deux <- r_deux
+write.csv2(sortie_summary, "BPE/sorties/LaPoste/ANOVA_changement_3_tail-villes_bureaux_summary.csv")
 
-# ANOVA sur les groupes INSEE : les bureaux de postes, puis relais, puis agences postales
+rm(Tab_AOV_bureau_poste, sortie_summary, AOV_bureau_poste, AOV_bureau_poste_2)
+
+
+#### changements selon les 9 tailles de villes : typo de l'Insee
 AOV_bureau_poste <- bpe_poste %>%
-  filter(TAU2016 != "10" & TYPEQU == "A208" & TCAM != 0) %>% st_drop_geometry()
+  filter(TAU2016 != "10" & TYPEQU == "A206" & TCAM != 0) %>% # type d'activité
+  st_drop_geometry()
 
-AOV_bureau_poste <- AOV_bureau_poste %>% filter(TCAM != Inf) # nécessaire relais poste
-AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016)
+AOV_bureau_poste_2 <- aov(AOV_bureau_poste$TCAM ~ AOV_bureau_poste$TAU2016_Insee)
 summary(AOV_bureau_poste_2)
 
+# tableau des moyennes de classe de taille de villes
 Tab_AOV_bureau_poste <- AOV_bureau_poste %>%
-  select(TAU2016, TCAM) %>%
-  group_by(TAU2016) %>%
+  select(TAU2016_Insee, TCAM) %>%
+  group_by(TAU2016_Insee) %>%
   summarise(Nombre = n(), Moyenne = mean(TCAM, na.rm = TRUE))
+write.csv2(Tab_AOV_bureau_poste, "BPE/sorties/LaPoste/ANOVA_changement_9_tail-villes_bureaux_tab_mean.csv")
 
-write.csv2(Tab_AOV_bureau_poste, "sorties/LaPoste/ANOVA_TAU_INSEE_agence_postale.csv")
-rm(Tab_AOV_bureau_poste)
+# résumé de l'ANOVA, calcul r² et sortie
+summary_AOV_poste <- summary(AOV_bureau_poste_2)
+summary_AOV_poste <- unlist(summary_AOV_poste)
+r_deux <- summary_AOV_poste[3]/(summary_AOV_poste[3] + summary_AOV_poste[4]) # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
 
-Summary_AOV <- summary(AOV_bureau_poste_2)
-Summary_AOV <- unlist(Summary_AOV)
-SCT <- Summary_AOV[3] + Summary_AOV[4] # récup SCE (somme des carrés estimés) et SCR (somme des carrés résiduels)
-R_deux <- Summary_AOV[3]/SCT
+sortie_summary <- as.data.frame(summary_AOV_poste) %>% t() %>% as.data.frame()
+sortie_summary$r_deux <- r_deux
+write.csv2(sortie_summary, "BPE/sorties/LaPoste/ANOVA_changement_9_tail-villes_bureaux_summary.csv")
 
-# ----------------------- les appartenances régionales (actuelles)
-
-
-# ----------------------- selon la situation des aires urbaines : croissance/décroissance
+rm(Tab_AOV_bureau_poste, sortie_summary, AOV_bureau_poste, AOV_bureau_poste_2)
 
 
-# ----------------------- corr. plot
-
-# ------------> corrélations par type d'activité postale (hors Paris)
-
-bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
-  select(population, densite_2013, densite_2018) %>%
-  st_drop_geometry() %>% 
-  ggpairs()
-
-bpe_poste %>% filter(TYPEQU == "A207" & LIBAU2010 != "Paris") %>% 
-  select(population, TCAM) %>% 
-  st_drop_geometry() %>% 
-  ggpairs()
-
-# -----> évolution des bureaux de poste selon la population :
-bpe_poste %>% filter(TYPEQU == "A206" & LIBAU2010 != "Paris") %>%
-  select(population, TCAM) %>% 
-  st_drop_geometry() %>% ggpairs()
-
-# idem mais en virant cette fois-ci les outliers
-bpe_poste %>% filter(TYPEQU == "A206" & LIBAU2010 != "Paris" & TCAM > -50) %>%
-  select(population, TCAM) %>% 
-  st_drop_geometry() %>% ggpairs()
-
-# -----> changements des bureaux de poste selon la population :
-bpe_poste %>% filter(TYPEQU == "A208" & LIBAU2010 != "Paris" & TCAM != 0) %>%
-  select(population, TCAM) %>% 
-  st_drop_geometry() %>% ggpairs()
-
-# transformation de TCAM en log10 > valeurs négatives, donc on doit d'abord "translate puis transform"
-# solution : add a constant value to the data prior to applying the log transform
-# The transformation is therefore log(Y+a) where a is the constant.
-# Some people like to choose a so that min(Y+a) is a very small positive number (like 0.001). 
-# Others choose a so that min(Y+a) = 1. 
-# You can show that a = b – min(Y), where b is either a small number or is 1
-bpe_poste %>% filter(TYPEQU == "A206" & LIBAU2010 != "Paris" & TCAM > -50 & TCAM != 0) %>% # bureau de poste
-  mutate(population = log10(population + 1 - min(population)), 
-         TCAM = log10(TCAM + 1 - min(TCAM))) %>%
-  select(population, TCAM) %>% 
-  st_drop_geometry() %>% ggpairs()
 
 
 # ---------------------- fermetures : sortie tableau et carto
