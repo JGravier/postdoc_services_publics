@@ -89,8 +89,11 @@ bpe_poste <- bpe_evolution %>%
 # enrichissement du tableau : densité et TCAM
 bpe_poste <- bpe_poste %>%
   mutate(densite_2013 = NB_2013/population*10000, # densité pour 10 000 habitants 
-         densite_2018 = NB_2018/population*10000, # densité pour 10 000 habitants 
-         TCAM = TCAM(datefin = NB_2018, datedebut = NB_2013, nbannee = 5)) # taux de croissance annuel moyen
+         densite_2018 = NB_2018/population*10000, # densité pour 10 000 habitants
+         NB_2013_2 = ifelse(NB_2013 == 0 & NB_2018 != 0, NB_2013 == 0.001, NB_2013),
+         # nécessaire de transformer les 0 en 0.001 dans les cas où il n'y avait pas d'activité postale en 2013
+         # mais qu'il y en a une en 2018. Sinon le calcul des TCAM ne peut pas être effectué dans ce cas de croissance
+         TCAM = TCAM(datefin = NB_2018, datedebut = NB_2013_2, nbannee = 5)) # taux de croissance annuel moyen
 
 
 # ------------------ densité 2018 des activités postales : activité par activité -----------------------
@@ -251,7 +254,7 @@ ggplot() +
   ggtitle("Réseau postal en 2018") +
   facet_wrap(~LIB_MOD)
 
-# Grand Est : cartographie
+# Grand Est : cartographie (à partir des classes calculées pour la France entière et les 3 types d'activités postale)
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
@@ -271,44 +274,52 @@ ggplot() +
   facet_wrap(~LIB_MOD)
 
 
-# ----------------> à reprendre à partir de là !!
+# ------------------ TCAM des activités postales -----------------------
 
-# TCAM en considérant un découpage préalable : bureaux de poste
-classes <- bpe_poste %>% filter(TYPEQU == "A206") 
+# ------------------------------------- Par type d'activité
+
+# TCAM 
+classes <- bpe_poste %>% filter(TYPEQU == "A208" & TCAM != "NaN") # type d'activité et 
+# "NaN" : cas où il n'y avait pas d'équipement en 2013, ni en 2018
+# A206 : bureau de poste, A207 : relais de poste, A208 : agence postale communale
 classes <- classIntervals(var = classes$TCAM, n = 7, style = "jenks")
-classes$brks[1:8]
-# par type : Grand Est
+classes$brks[2] <- -99 # changer la discrétisation de la première classe [-100 ; -100) en [-100 ; -99 )
+# pour être en mesure d'utiliser les breaks dans le geom_sf()
+
+# France : cartographie
+# NOTE : revoir la visu sémio
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
-          aes(fill = cut(TCAM, classes$brks[2:8])), show.legend = TRUE) +
-  scale_fill_brewer(name = "TCAM", palette = "RdBu", drop = FALSE) +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A208"), 
+          aes(fill = cut(TCAM, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "TCAM", palette = "RdYlBu", drop = FALSE) +
+  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  ggtitle("Bureaux de poste")
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle("Agences postales communales")
 
-
-# TCAM mais "de près" en considérant un découpage préalable : agence postale communale
-classes <- bpe_poste %>% filter(TYPEQU == "A208") 
-classes <- classIntervals(var = classes$TCAM, n = 7, style = "jenks")
-classes$brks[2:8]
-# par type : Grand Est
+# Région Grand Est : cartographie (zoom)
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
-          aes(fill = cut(TCAM, classes$brks[2:8])), show.legend = TRUE) +
-  scale_fill_brewer(name = "TCAM", palette = "RdBu", drop = FALSE) +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A208"), 
+          aes(fill = cut(TCAM, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "TCAM", palette = "RdYlBu", drop = FALSE) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
+  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
+           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  ggtitle("Bureaux de poste")
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle("Agences postales communales")
 
 
 # ----------------- deuxième temps explo Poste ---------------
