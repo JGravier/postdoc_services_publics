@@ -67,13 +67,14 @@ tm_shape(shp = au_2010_pop) +
 
 
 # -------------------- données BPE : read ---------------------
-bpe_evolution <- read.dbf("BPE/data/bpe1318_nb_equip_au.dbf")
-metadonnees <- read.dbf("BPE/data/varmod_bpe1318_nb_equip_au.dbf")
+bpe_evolution <- read.dbf("BPE/data/bpe1318_nb_equip_au.dbf", as.is = TRUE)
+Encoding(bpe_evolution$TYPEQU) <- "Latin1"
+metadonnees <- read.dbf("BPE/data/varmod_bpe1318_nb_equip_au.dbf", as.is = TRUE)
 metadonnees <- metadonnees %>%
   mutate(COD_MOD = as.character(COD_MOD))
 
 bpe_evolution <- left_join(x = bpe_evolution, y = metadonnees, by = c("TYPEQU" = "COD_MOD"))
-bpe_evolution <- bpe_evolution %>% select(-COD_VAR, -LIB_VAR, -TYPE_VAR.C.8, -LONG_VAR.C.8)
+bpe_evolution <- bpe_evolution %>% select(-COD_VAR, -LIB_VAR, -TYPE_VAR, -LONG_VAR)
 rm(metadonnees)
 
 # -------------------- La Poste ---------------------
@@ -104,20 +105,20 @@ ggplot() +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
   geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  xlab("") +
-  ylab("") +
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Bureaux de poste")
 
 
-# Grand Est : cartographie
+# Grand Est : cartographie (zoom à partir des classes calculées pour la France entière)
 guides <- st_bbox(france %>% filter(INSEE_REG == "44")) # zoom sur la région Grand-Est
 
 ggplot() +
@@ -125,7 +126,7 @@ ggplot() +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
   geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
   scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
@@ -133,9 +134,9 @@ ggplot() +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  xlab("") +
-  ylab("") +
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Bureaux de poste")
 
@@ -149,82 +150,125 @@ classes <- classIntervals(var = classes$densite_2018, n = 5, style = "jenks")
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A207"), 
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  xlab("") +
-  ylab("") +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018")  ggtitle("Relais de poste")
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
+  ggtitle("Relais de poste")
 
 
-# Grand Est : cartographie
+# Grand Est : cartographie (zoom à partir des classes calculées pour la France entière)
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A207"), 
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
   scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
            dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  xlab("") +
-  ylab("") +
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Relais de poste")
 
 
 # ------------------------------------- Les agences postales :
-classes <- bpe_poste %>% filter(TYPEQU == "A208") 
+classes <- bpe_poste %>% filter(TYPEQU == "A208")
 classes <- classIntervals(var = classes$densite_2018, n = 5, style = "jenks")
 
 # France : cartographie
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A208"), 
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  xlab("") +
-  ylab("") +
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
   ggtitle("Agences postales communales")
 
 
-# Grand Est : cartographie
+# Grand Est : cartographie (zoom à partir des classes calculées pour la France entière)
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A208"), 
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "densité", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
   scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
            dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  xlab("") +
-  ylab("") +
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
-  ggtitle("Relais de poste")
+  ggtitle("Agences postales communales")
 
+
+# ------------------ densité 2018 des activités postales : globalement
+classes <- classIntervals(var = bpe_poste$densite_2018, n = 5, style = "jenks")
+
+# France : cartographie
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = bpe_poste, 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
+  ggtitle("Réseau postal en 2018") +
+  facet_wrap(~LIB_MOD)
+
+# Grand Est : cartographie
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = bpe_poste, 
+          aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
+  scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
+                    drop = FALSE) +
+  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
+  ggtitle("Réseau postal en 2018") +
+  facet_wrap(~LIB_MOD)
 
 
 # ----------------> à reprendre à partir de là !!
