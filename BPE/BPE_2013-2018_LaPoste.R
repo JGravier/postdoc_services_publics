@@ -1,4 +1,3 @@
-<<<<<<< HEAD:BPE/BPE_2013-2018_LaPoste.R
 library(tidyverse)
 library(sf)
 library(tmap)
