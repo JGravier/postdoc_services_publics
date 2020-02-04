@@ -10,10 +10,10 @@ Code et données liés à l'étude de l'évolution des services publics des vill
 ### Objectifs  
 Les questions portent en particulier sur la diminution et la rétraction de l’offre de services publics intra-urbains, ainsi que sur les processus de court-circuitage des villes dans les réseaux de transports collectifs interurbains.
 
-### Données
+### Données et licence
 Cf. Readme par dossier
 
-### Licence
+### Licence du code
 GNU AFFERO GENERAL PUBLIC LICENSE
 
 ### Réalisation
