@@ -110,7 +110,7 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
-  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -132,8 +132,7 @@ ggplot() +
   scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
-  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
-           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -157,7 +156,7 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
-  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -177,8 +176,7 @@ ggplot() +
   scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
-  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
-           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -201,7 +199,7 @@ ggplot() +
           aes(fill = cut(densite_2018, classes$brks)), show.legend = TRUE) +
   scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
-  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -221,8 +219,7 @@ ggplot() +
   scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
-  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
-           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -263,6 +260,7 @@ ggplot() +
   scale_fill_brewer(name = "densité pour\n10 000 hab", palette = "RdYlGn", direction = -1,  # inversion de la palette : direction
                     drop = FALSE) +
   coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.3) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -279,22 +277,22 @@ ggplot() +
 # ------------------------------------- Par type d'activité
 
 # TCAM 
-classes <- bpe_poste %>% filter(TYPEQU == "A208" & TCAM != "NaN") # type d'activité et 
+classes <- bpe_poste %>% filter(TYPEQU == "A206" & TCAM != "NaN") # type d'activité et 
 # "NaN" : cas où il n'y avait pas d'équipement en 2013, ni en 2018
 # A206 : bureau de poste, A207 : relais de poste, A208 : agence postale communale
-classes <- classIntervals(var = classes$TCAM, n = 7, style = "jenks")
+classes <- classIntervals(var = classes$TCAM, n = 6, style = "jenks")
 classes$brks[2] <- -99 # changer la discrétisation de la première classe [-100 ; -100) en [-100 ; -99 )
-# pour être en mesure d'utiliser les breaks dans le geom_sf()
+# pour être en mesure d'utiliser les breaks dans le geom_sf() - si nécessaire
 
 # France : cartographie
 # NOTE : revoir la visu sémio & le découpage en classe
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A208"), 
-          aes(fill = cut(TCAM, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "TCAM", palette = "RdYlBu", drop = FALSE) +
-  scalebar(data = bpe_poste, dist = 100, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
+          aes(fill = cut(TCAM, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
+  scale_fill_brewer(name = "TCAM", palette = "BuPu", drop = FALSE, direction = -1) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -302,18 +300,17 @@ ggplot() +
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
-  ggtitle("Agences postales communales")
+  ggtitle("Bureaux de poste")
 
 # Région Grand Est : cartographie (zoom)
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A208"), 
+  geom_sf(data = bpe_poste %>% filter(TYPEQU == "A206"), 
           aes(fill = cut(TCAM, classes$brks)), show.legend = TRUE) +
-  scale_fill_brewer(name = "TCAM", palette = "RdYlBu", drop = FALSE) +
+  scale_fill_brewer(name = "TCAM", palette = "Blues", drop = FALSE, direction = -1) +
   coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) + # zoom régional
-  scalebar(x.min = guides[1], x.max = guides[3], y.min = guides[2], y.max = guides[4],
-           dist = 20, dist_unit = "km", transform = FALSE, st.size = 3, border.size = 0.5) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.5) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -321,7 +318,7 @@ ggplot() +
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
-  ggtitle("Agences postales communales")
+  ggtitle("Bureaux de poste")
 
 
 # ------------------ corrélations linéaires : évo. ---------------------
@@ -375,7 +372,7 @@ bpe_poste %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités..\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
   facet_wrap(~ LIB_MOD)
 
@@ -391,10 +388,9 @@ bpe_poste %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités..\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
   facet_wrap(~ LIB_MOD)
-
 
 
 #### ANOVA sur ce groupe de tailles villes par type d'activité
@@ -436,7 +432,7 @@ bpe_poste %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités..\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
   facet_wrap(~ LIB_MOD)
 
@@ -452,7 +448,7 @@ bpe_poste %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier | LabEx DynamiTe, UMR Géographie-cités 2020.\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités..\n Sources : BPE 2013-2018, Insee") +
   ggtitle("Réseau postal des aires urbaines entre 2013 et 2018 (hors Paris)") +
   facet_wrap(~ LIB_MOD)
 
@@ -544,9 +540,7 @@ write.csv2(sortie_summary, "BPE/sorties/LaPoste/ANOVA_changement_9_tail-villes_b
 rm(Tab_AOV_bureau_poste, sortie_summary, AOV_bureau_poste, AOV_bureau_poste_2)
 
 
-
-
-# ---------------------- fermetures : sortie tableau et carto
+# ---------------------- fermetures -----------------
 fermeture_poste <- bpe_poste %>% 
   filter(TCAM == -100)
 
@@ -558,395 +552,37 @@ ggplot() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  facet_wrap(~LIB_MOD.C.87) +
-  labs(subtitle = "Fermetures")
+  facet_wrap(~LIB_MOD) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018",
+       subtitle = "Fermetures")
 
-write.csv2(fermeture_poste %>% st_drop_geometry(), "sorties/LaPoste/fermetures.csv")
+write.csv2(fermeture_poste %>% st_drop_geometry(), "BPE/sorties/LaPoste/fermetures.csv")
 rm(fermeture_poste)
 
 
-# -------------------- très fortes diminution : sortie tableau et carto
+# -------------------- très fortes diminutions & fermetures ------------
 fortes_diminution_poste <- bpe_poste %>% 
-  filter(TCAM < -10)
+  filter(TCAM < -5)
 
 classes <- classIntervals(var = fortes_diminution_poste$TCAM, n = 5, style = "jenks")
-classes$brks[2:6]
-# par type : Grand Est
+classes$brks[2] <- -99 # changer la discrétisation de la première classe [-100 ; -100) en [-100 ; -99 )
+# pour être en mesure d'utiliser les breaks dans le geom_sf() - si nécessaire
+
+# par type : France entière
 ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
   geom_sf(data = fortes_diminution_poste, 
-          aes(fill = cut(TCAM, classes$brks[2:6])), show.legend = TRUE) +
+          aes(fill = cut(TCAM, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
   scale_fill_brewer(name = "TCAM", palette = "YlOrRd", drop = FALSE, direction = -1) + #inverser la palette : direction
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  facet_wrap(~LIB_MOD.C.87) +
-  labs(subtitle = "Fortes diminutions")
+  facet_wrap(~LIB_MOD) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018",
+       subtitle = "Fortes diminutions et fermetures")
 
 write.csv2(fortes_diminution_poste %>% st_drop_geometry(), 
-           "sorties/LaPoste/diminution_inferieures_10_pourcents.csv")
+           "BPE/sorties/LaPoste/diminution_inferieures_10_pourcents.csv")
 rm(fortes_diminution_poste)
-
-
-
-# ------------------ Urgences et maternités ----------------------
-bpe_maternite <- bpe_evolution %>%
-  filter(TYPEQU %in% c("D106", "D107")) %>%
-  left_join(., y = au_2010_pop, by = c("ID_AU2010" = "AU2010")) %>%
-  filter(!is.na(population)) %>%
-  st_as_sf()
-
-# densité pour 10 000 habitants
-bpe_maternite <- bpe_maternite %>%
-  mutate(densite_2013 = NB_2013/population*10000,
-         densite_2018 = NB_2018/population*10000,
-         TCAM = TCAM(datefin = densite_2018, datedebut = densite_2013, nbannee = 5),
-         qualit_TCAM = ifelse(TCAM == -100, "Perte", 
-                              ifelse(TCAM < 0, "Diminution",
-                                     ifelse(TCAM == 0 & densite_2013 != 0, "Maintien", 
-                                            ifelse(TCAM > 0, "Croissance", TCAM))
-                              )
-                              ))
-
-# corr plot
-bpe_maternite %>% filter(TYPEQU == "D106" & LIBAU2010 != "Paris") %>% 
-  select(population, densite_2013, densite_2018) %>% st_drop_geometry() %>% ggpairs()
-
-bpe_maternite %>% filter(TYPEQU == "D106" & LIBAU2010 != "Paris") %>% 
-  select(population, TCAM) %>% st_drop_geometry() %>% ggpairs()
-
-# cartographie des densités en 2013 et 2018
-classes <- bpe_maternite %>% filter(TYPEQU == "D106") 
-classes <- classIntervals(var = classes$TCAM, n = 7, style = "jenks")
-classes$brks[2:8]
-
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_maternite %>% filter(TYPEQU == "D106") %>% gather(key = "densite", value = "donnees", densite_2013:densite_2018), 
-          aes(fill = donnees), show.legend = TRUE) +
-  scale_fill_viridis_c(name = "pour 10 000 hab.", option = "magma", direction = -1) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~densite) +
-  ggtitle("Urgences")
-
-# cartographie des classes d'évolution entre 2013 et 2018
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_maternite, 
-          aes(fill = qualit_TCAM), show.legend = TRUE) +
-  scale_fill_tableau(name = "pour 10 000 hab.", palette = "Tableau 10") +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~LIB_MOD.C.87)
-
-# région Grand Est
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_maternite, 
-          aes(fill = qualit_TCAM), show.legend = TRUE) +
-  scale_fill_tableau(name = "pour 10 000 hab.", palette = "Tableau 10") +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~LIB_MOD.C.87)
-
-
-# ------------------ BPE évolution générale ---------------
-bpe_evo_au <- bpe_evolution %>%
-  left_join(., y = au_2010_pop, by = c("ID_AU2010" = "AU2010")) %>%
-  filter(!is.na(population)) %>%
-  st_as_sf()
-
-bpe_evo_au <- bpe_evo_au %>%
-  mutate(densite_2013 = NB_2013/population*10000,
-       densite_2018 = NB_2018/population*10000,
-       TCAM = TCAM(datefin = densite_2018, datedebut = densite_2013, nbannee = 5),
-       qualit_TCAM = ifelse(TCAM == -100, "Perte", 
-                            ifelse(TCAM < 0, "Diminution",
-                                   ifelse(TCAM == 0 & densite_2013 != 0, "Maintien", 
-                                          ifelse(TCAM > 0, "Croissance", TCAM))
-                            )
-       ))
-
-
-# cartographie des classes d'évolution entre 2013 et 2018
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_evo_au %>% filter(TYPEQU %in% c("D401", "D601", "D603")), 
-          aes(fill = qualit_TCAM), show.legend = TRUE) +
-  scale_fill_tableau(palette = "Tableau 10", name = "Évolution") +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~LIB_MOD.C.87)
-
-# région Grand Est
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_evo_au %>% filter(TYPEQU %in% c("D401", "D601", "D603")), 
-          aes(fill = qualit_TCAM), show.legend = TRUE) +
-  scale_fill_tableau(palette = "Tableau 10", name = "Évolution") +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~LIB_MOD.C.87)
-
-
-# ------------- test groupes ----------------
-bpe_evo_au_groupe <- bpe_evo_au %>%
-  filter(Groupe != "autre") %>%
-  group_by(ID_AU2010, Groupe) %>%
-  summarise(sum2013 = sum(NB_2013), sum2018 = sum(NB_2018)) %>%
-  left_join(., y = au_2010_pop %>% st_drop_geometry(), by = c("ID_AU2010" = "AU2010")) %>%
-  mutate(densite_2013 = sum2013/population*10000,
-         densite_2018 = sum2018/population*10000,
-         TCAM = TCAM(datefin = densite_2018, datedebut = densite_2013, nbannee = 5),
-         qualit_TCAM = ifelse(TCAM == -100, "Perte", 
-                              ifelse(TCAM < 0, "Diminution",
-                                     ifelse(TCAM == 0 & densite_2013 != 0, "Maintien", 
-                                            ifelse(TCAM > 0, "Croissance", TCAM))
-                              )
-         ))
-
-# cartographie des classes d'évolution entre 2013 et 2018
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_evo_au_groupe, 
-          aes(fill = qualit_TCAM), show.legend = TRUE) +
-  scale_fill_tableau(palette = "Tableau 10", name = "Évolution") +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~Groupe)
-
-# exploration
-bpe_evo_au_groupe %>% st_drop_geometry() %>% ungroup() %>% 
-  select(TCAM, Groupe) %>% ggpairs()
-
-options(scipen=10000)
-bpe_evo_au_groupe %>% 
-  ggplot(aes(y = population, x = TCAM)) +
-  geom_point() +
-  geom_hline(yintercept = 20000, color = "darkorange") +
-  geom_hline(yintercept = 200000, color = "darkgreen") +
-  scale_y_log10() +
-  facet_wrap(~Groupe)
-
-bpe_evo_au_groupe %>% 
-  ggplot(aes(y = population, x = qualit_TCAM)) +
-  geom_boxplot() +
-  geom_hline(yintercept = 20000, color = "darkorange") +
-  geom_hline(yintercept = 200000, color = "darkgreen") +
-  xlab("") +
-  scale_y_log10() +
-  facet_wrap(~Groupe)
-
-sf_grand_est <- st_join(x = france %>% filter(INSEE_REG %in% c("44")), y = bpe_evo_au_groupe, join = st_intersects) %>%
-  st_drop_geometry() %>%
-  filter(LIBAU2010 != "Paris" & ID_AU2010 %ni% c("073", "025", "336", "469")) %>%
-  select(ID_AU2010)
-
-sf_grand_est <- inner_join(x = bpe_evo_au_groupe, y = sf_grand_est, by = "ID_AU2010")
-
-sf_grand_est <- ungroup(sf_grand_est) %>%
-  mutate(geom = geometry) %>%
-  st_drop_geometry() %>%
-  unique() %>%
-  st_as_sf()
-
-tmap_mode("view")
-tm_shape(shp = sf_grand_est %>% select(geometry) %>% unique()) +
-  tm_fill(col = "grey", alpha = 0.1) +
-  tm_borders(col = "black")
-
-sf_grand_est %>%
-  ggplot(aes(y = population, x = qualit_TCAM)) +
-  geom_boxplot() +
-  geom_hline(yintercept = 20000, color = "darkorange") +
-  geom_hline(yintercept = 200000, color = "darkgreen") +
-  xlab("") +
-  scale_y_log10() +
-  facet_wrap(~Groupe)
-
-sf_grand_est %>%
-  ggplot(aes(y = population, x = TCAM)) +
-  geom_point() +
-  geom_hline(yintercept = 20000, color = "darkorange") +
-  geom_hline(yintercept = 200000, color = "darkgreen") +
-  scale_y_log10() +
-  facet_wrap(~Groupe)
-
-# région Grand Est
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = sf_grand_est, 
-          aes(fill = qualit_TCAM), show.legend = TRUE) +
-  scale_fill_tableau(palette = "Tableau 10", name = "Évolution") +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~Groupe)
-
-# -------- analyse densité : France -----------
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = bpe_evo_au_groupe %>% 
-            filter(Groupe == "service public régalien à destination du maintien de l’ordre interne à l’État") %>% 
-            gather(key = "densite", value = "donnees", densite_2013:densite_2018), 
-          aes(fill = donnees), show.legend = TRUE) +
-  scale_fill_viridis_c(name = "pour 10 000 hab.", option = "magma", direction = -1) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~densite) +
-  ggtitle("service public régalien à destination du maintien de l’ordre interne à l’État")
-
-pour_acp_densite <- bpe_evo_au_groupe %>% 
-  ungroup() %>%
-  spread(key = "Groupe", value = densite_2013) %>% 
-  st_drop_geometry()
-pour_acp_densite <- pour_acp_densite %>%
-  select(ID_AU2010,`service public régalien à destination du maintien de l’ordre interne à l’État`:`service socioculturel sportif`) %>%
-  group_by(ID_AU2010) %>%
-  summarise_at(vars(`service public régalien à destination du maintien de l’ordre interne à l’État`:`service socioculturel sportif`),
-               sum, na.rm = TRUE)
-
-acp_densite2013 <- dudi.pca(pour_acp_densite %>% select(-ID_AU2010), scannf = FALSE, center = TRUE,
-                            scale = TRUE, nf = ncol(pour_acp_densite %>% select(-ID_AU2010)))
-
-explor(acp_densite2013)
-cah_sur_acp_densite2013 <- CAH_sur_coord_ACP(pour_acp_densite %>% select(-ID_AU2010))
-
-plot(cah_sur_acp_densite2013, hang = -1, cex = 0.6, 
-     main = "Dendrogramme",
-     xlab = "aires urbaines")
-typo <- cutree(cah_sur_acp_densite2013, k = 6)
-
-tab_standardise_classes_densite2013 <- pour_acp_densite %>% select(-ID_AU2010) %>%
-  Standar() %>%
-  mutate(Cluster = factor(typo, levels = 1:6))
-rownames(tab_standardise_classes_densite2013) <- pour_acp_densite$ID_AU2010
-head(tab_standardise_classes_densite2013)
-write.csv(tab_standardise_classes_densite2013, "sorties/tableau/tab_standardise_densite2013.csv")
-
-tab_standardise_mean <- tab_standardise_classes_densite2013 %>%
-  group_by(Cluster)
-tab_standardise_mean <- tab_standardise_mean %>%
-  summarise_each(funs(mean))
-write.csv(tab_standardise_mean, "sorties/tableau/tab_meanCluster.csv")
-
-tab_standardise_mean %>%
-  gather(key = "clef", value = donnees, -Cluster) %>%
-  ggplot() +
-  geom_bar(aes(clef, donnees, fill = Cluster), stat = "identity") +
-  theme_julie() +
-  scale_fill_tableau(palette = "Color Blind", breaks = NULL) +
-  labs(caption = "J. Gravier | UMR Géographie-cités 2017") +
-  labs(subtitle = "Classe de périodes : CAH (distance euclidienne)") +
-  ylab("Moyennes des fréquences standardisées par classe") +
-  facet_wrap(~Cluster) +
-  coord_flip()
-
-tab_standardise_classes_densite2013$AU2010 <- rownames(tab_standardise_classes_densite2013)
-tab_standardise_classes_densite2013 <- left_join(x = au_2010_pop, y = tab_standardise_classes_densite2013,
-                                                 by = "AU2010")
-
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = tab_standardise_classes_densite2013, 
-          aes(fill = Cluster), show.legend = TRUE) +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
-  scale_fill_tableau(palette = "Color Blind", name = "Type") +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank())
-
-tab_standardise_classes_densite2013 %>%
-  ggplot(aes(y = population, x = Cluster)) +
-  geom_boxplot() +
-  geom_hline(yintercept = 20000, color = "darkorange") +
-  geom_hline(yintercept = 200000, color = "darkgreen") +
-  xlab("Types") +
-  scale_y_log10()
-
-
-# ----------------- militaires ---------------------
-militaire <- read_excel("data/fermetures_casernes.xlsx")
-
-militaire_sum <- militaire %>%
-  group_by(AU2010, date_fermeture_prevue) %>%
-  summarise(effectifs_tot = sum(effectifs)) %>%
-  left_join(., y = au_2010_pop, by = "AU2010") %>%
-  mutate(volume = effectifs_tot/population*100) %>%
-  st_as_sf()
-
-# cartographie
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = militaire_sum, aes(fill = effectifs_tot), show.legend = TRUE) +
-  scale_fill_gradient2_tableau(palette = "Orange-Blue Diverging", trans = "reverse",
-                               name = "Effectifs") +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~date_fermeture_prevue)
-
-militaire <- militaire %>%
-  group_by(AU2010) %>%
-  summarise(effectifs_tot = sum(effectifs)) %>%
-  left_join(., y = au_2010_pop, by = "AU2010") %>%
-  mutate(volume = effectifs_tot/population*100) %>%
-  st_as_sf()
-
-militaire %>% filter(LIBAU2010 != "Paris") %>% select(population, volume) %>% 
-  st_drop_geometry() %>% ggpairs()
-
-militaire %>% filter(LIBAU2010 != "Paris") %>%
-  ggplot(aes(x = population, y = volume, label = LIBAU2010)) +
-  geom_point() +
-  ggrepel::geom_text_repel(data = subset(militaire, volume > 3)) +
-  theme_julie() +
-  xlab("Population des aires urbaines") +
-  ylab("Militaires partis (part de la population)")
-
-# grand est
-ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = militaire_sum, aes(fill = volume), show.legend = TRUE) +
-  scale_fill_gradient2_tableau(palette = "Orange-Blue Diverging", trans = "reverse",
-                               name = "Part de la pop") +
-  coord_sf(xlim = guides[c(1,3)], ylim = guides[c(2,4)]) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  facet_wrap(~date_fermeture_prevue)
