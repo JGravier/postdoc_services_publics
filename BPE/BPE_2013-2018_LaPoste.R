@@ -9,7 +9,6 @@ library(classInt)
 library(explor)
 library(ade4)
 library(patchwork)
-library(ggsn) # pour les échelles (carto)
 
 source("fonctions_bases.R")
 
