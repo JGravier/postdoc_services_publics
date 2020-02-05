@@ -12,7 +12,7 @@
 
 #' fonction pour extraire les n derniers characters d'un string dans une version vectorisée
 #' fondée à partir de http://stackoverflow.com/questions/7963898/extracting-the-last-n-characters-from-a-string-in-r
-#' @param xx les vecteurs à traiter, type : c("12345","ABCDE")
+#' @param xx le vecteur à traiter, type : c("12345","ABCDE")
 #' @param n le nombre de characters que l'on souhaite récupérer
 #' @return les n derniers characters
 
@@ -82,7 +82,7 @@ tab_ecart_pearson_residus <- function(x){
 #' @param y tableau des unités spatiales étudiées globalement contenant une colonne d'identifiants uniques
 #' La colonne des identifiants doit être dénommée "id"
 #' @exemple les codes INSEE des communes françaises doivent avoir en intitulé de variable "id"
-#' @return tableau de la part des unités spatiales contenant tel ou tel élément par rapport à la totalité des US 
+#' @return liste (nombre et part) des US contenant tel ou tel éléments
 
 fonction_part_equip_recup <- function(x, y){
   y <- y %>% select(id) %>% # sélection des identifiants
@@ -90,6 +90,7 @@ fonction_part_equip_recup <- function(x, y){
     nrow() # nombre de lignes (unités spatiales)
   somme <- summarise_all(x, sum, na.rm = TRUE) # somme des présences de chaque éléments
   pourcentage <- somme/y*100 # pourcentage des présences de chaque éléments par rapport à la totalités des unités spatiales
+  return(list(somme, pourcentage))
 }
 
 
@@ -105,7 +106,7 @@ fonction_part_equip_recup <- function(x, y){
 #' @param y tableau des unités spatiales étudiées globalement contenant une colonne d'identifiants uniques
 #' colonne 1 : les identifiants des unités spatiales étudiées ; intitulé = "id"
 #' colonne 2 : les populations des unités spatiales étudiées ; intitulé = "pop"
-#' @return tableau de la part de la population concernées par la présence de tel ou tel élément par rapport à la pop globale 
+#' @return iste (nombre et part) de la population concernées par la présence de tel ou tel élément 
 
 fonction_part_pop_recup <- function(x, y){
   sum_pop_equipement <- y %>%
@@ -114,10 +115,11 @@ fonction_part_pop_recup <- function(x, y){
     pivot_longer(-id:-pop, names_to = "equip", values_to = "pres_abs") %>% # données en format long uniquement sur les éléments
     mutate(pres_abs = ifelse(pres_abs == 1, pop, pres_abs)) %>% # nlle colonne : sachant que si présence, alors population et sinon NA
     pivot_wider(names_from = "equip", values_from = "pres_abs", values_fn = list(pres_abs = sum)) %>% # format wide
-    summarise_if(is.numeric, sum, na.rm = TRUE) # calcul des sommes des pop des communes ayant tel ou tel élément
+    summarise_if(is.numeric, sum, na.rm = TRUE) %>% # calcul des sommes des pop des communes ayant tel ou tel élément
+    select(-pop)
   somme_pop <- sum(y$pop, na.rm = TRUE) # population totale étudiée
   pourcentage <- sum_pop_equipement/somme_pop*100 # calcul du pourcentage pop desservie par élément
-  pourcentage <- pourcentage %>% select(-pop) # tableau final sans la population
+  return(list(sum_pop_equipement, pourcentage))
 }
 
 
