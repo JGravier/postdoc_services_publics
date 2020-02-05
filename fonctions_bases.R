@@ -106,7 +106,7 @@ fonction_part_equip_recup <- function(x, y){
 #' @param y tableau des unités spatiales étudiées globalement contenant une colonne d'identifiants uniques
 #' colonne 1 : les identifiants des unités spatiales étudiées ; intitulé = "id"
 #' colonne 2 : les populations des unités spatiales étudiées ; intitulé = "pop"
-#' @return iste (nombre et part) de la population concernées par la présence de tel ou tel élément 
+#' @return liste (nombre et part) de la population concernées par la présence de tel ou tel élément 
 
 fonction_part_pop_recup <- function(x, y){
   sum_pop_equipement <- y %>%
