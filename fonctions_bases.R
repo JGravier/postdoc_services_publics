@@ -26,8 +26,11 @@ str_sub_left <- function(x, n){
 ### Enrichissement
 
 #' fonction pour de calculer des taux de croissance annuels moyens
-#' @param datefin la date de fin de la période étudiée
-#' @param datedebut la date de début de la période étudiée
+#' 
+#' format de données initial : tableau d'information géographique qui doit contenir : en ligne les unités spatiales étudiées, en colonne les variables datées
+#' 
+#' @param datefin variable : la date de fin de la période étudiée
+#' @param datedebut variable : la date de début de la période étudiée
 #' @param nbannee le nombre d'années effectives entre date de début et date de fin (pas le plus judicieux)
 #' @return le taux de croissance annuel moyen
 
@@ -77,7 +80,7 @@ tab_ecart_pearson_residus <- function(x){
 #' voir Saint-Julien, Thérèse (coord.), Services et commerces, Montpellier et Paris, Reclus et La Documentation Française,
 #' Atlas de France, vol. 10, 1999 p. 71
 #' 
-#' @param x tableau de données en présence/absence
+#' @param x tableau d'information géographique en présence/absence
 #' Il doit contenir : en ligne les unités spatiales étudiées, en colonne les éléments étudiés
 #' @param y tableau des unités spatiales étudiées globalement contenant une colonne d'identifiants uniques
 #' La colonne des identifiants doit être dénommée "id"
