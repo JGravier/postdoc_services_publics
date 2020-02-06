@@ -14,8 +14,8 @@ L'ensemble des données de la BPE sont produites par l'INSEE et ont été télé
 _localisation : data/ensemble des fichiers contenant la mention "bpeDate"
 
 #### Données population
-Données produites par l'INSEE : Chiffres détaillés - Séries historiques de population (1876 à 2015), France hors Mayotte - Communes 
-Complétées pour les arrondissements de Lyon et Marseille pour l'année 2009 et 2013 par les données Population légales en 2009 et 2013. Voir : http://www.insee.fr/fr/statistiques/2119804 et http://www.insee.fr/fr/statistiques/2119504
+1) Données produites par l'INSEE : Chiffres détaillés - Séries historiques de population (1876 à 2015), France hors Mayotte - Communes 
+2) Complétées pour les arrondissements de Lyon et Marseille pour l'année 2009 et 2013 par les données Population légales en 2009 et 2013. Voir : http://www.insee.fr/fr/statistiques/2119804 et http://www.insee.fr/fr/statistiques/2119504
 
 _localisation : data/populations_communales_arrondissements_donnees_temporelles_geographie_2017.xlsx
 
