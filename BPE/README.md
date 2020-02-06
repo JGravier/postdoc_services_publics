@@ -11,13 +11,13 @@ L'ensemble des données de la BPE sont produites par l'INSEE et ont été télé
 1) voir les métadonnées générales de la BPE : http://www.insee.fr/fr/metadonnees/source/serie/s1161
 2) voir l'arrêté portant sur la création d'une base permanente des équipements : http://www.legifrance.gouv.fr/affichTexte.do?cidTexte=LEGITEXT000018041390&dateTexte=20190411
 
-localisation : data/ensemble des fichiers contenant la mention "bpeDate"
+_localisation : data/ensemble des fichiers contenant la mention "bpeDate"
 
 #### Données population
-Données produites par l'INSEE : Chiffres détaillés - Séries historiques de population (1876 à 2015), France hors Mayotte - Communes
+Données produites par l'INSEE : Chiffres détaillés - Séries historiques de population (1876 à 2015), France hors Mayotte - Communes 
 Complétées pour les arrondissements de Lyon et Marseille pour l'année 2009 et 2013 par les données Population légales en 2009 et 2013. Voir : http://www.insee.fr/fr/statistiques/2119804 et http://www.insee.fr/fr/statistiques/2119504
 
-localisation : data/populations_communales_arrondissements_donnees_temporelles_geographie_2017.xlsx
+_localisation : data/populations_communales_arrondissements_donnees_temporelles_geographie_2017.xlsx
 
 #### Données spatiales
 à compléter...
