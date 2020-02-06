@@ -1,10 +1,12 @@
-library(tidyverse)
+library(tidyverse) # need tidyr version>= 1.0.0
 library(sf)
 library(readxl)
 library(ggthemes)
 library(tmap)
 
 source("fonctions_bases.R")
+
+# -------------------------------- ECHELLE COMMUNALE ------------------------------------------------------
 
 # -------------- import et réorganisation des données BPE 2018 ------------------
 ## fond France
@@ -175,7 +177,8 @@ bpe_2009 %>% st_as_sf() %>% select(`Bureau de poste`) %>% filter(`Bureau de post
   mutate(date = "2009") -> `2009`
 bpe_2018_wide %>% 
   left_join(., y = communes_2019, by = c("DEPCOM" = "INSEE_COM")) %>% ungroup() %>%
-  st_as_sf() %>% select(`Bureau de poste`) %>% filter(`Bureau de poste` == 1) %>%
+  st_as_sf() %>% select(`Agence postale`) %>% 
+  filter(`Agence postale` == 1) %>%
   mutate(date = "2018") -> `2018`
 
 tm_shape(`2009`) +
