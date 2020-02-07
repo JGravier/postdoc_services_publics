@@ -20,10 +20,14 @@ _localisation : data/ensemble des fichiers contenant la mention "bpeDate"
 _localisation : data/populations_communales_arrondissements_donnees_temporelles_geographie_2017.xlsx
 
 #### Données spatiales
-à compléter...
+Trois fichiers :
+1) AU2010_au_01-01-2019.xls : données produites par l'INSEE, Aires urbaines 2010 - France ; Liste des aires urbaines 2010, géographie 2019. 
+2) COMMUNES (shp) : données produites par l'IGN, ADMIN-EXPRESS-COG édition 2019 France entière
+3) REGION (shp) : données produites par l'IGN, ADMIN-EXPRESS-COG édition 2019 France entière
 
+_localisation : data/data_communes_au
 
 ### Réalisation
-R version 3.6.0 (2019-04-26) -- "Planting of a Tree"
+R version 3.6.1 (2019-07-05) -- "Action of the Toes"
 Copyright (C) 2019 The R Foundation for Statistical Computing
 Platform: x86_64-w64-mingw32/x64 (64-bit)
