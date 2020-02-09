@@ -3,8 +3,10 @@ library(sf)
 library(readxl)
 library(ggthemes)
 library(tmap)
+library(patchwork)
 
 source("fonctions_bases.R")
+options(scipen=10000)
 
 # -------------------------------- ECHELLE COMMUNALE ------------------------------------------------------
 
@@ -59,10 +61,18 @@ part_com_pop_equipees_2018 <- bpe_2018_wide %>%
   fonction_part_pop_recup(x = ., y = communes_2019 %>% st_drop_geometry() %>% rename(id = "INSEE_COM", pop = "POPULATION"))
 
 
-tableau_global_2018 <- bind_rows(part_com_equipees_2018[[2]], part_com_pop_equipees_2018[[2]]) %>%
+tableau_global_2018_part <- bind_rows(part_com_equipees_2018[[2]], part_com_pop_equipees_2018[[2]]) %>%
   t() %>%
   as.data.frame() %>%
   rename(part_com_equipee = "V1", part_pop_equipee = "V2") %>%
+  rownames_to_column(var = "type") %>%
+  as_tibble() %>%
+  mutate(date = "2018")
+
+tableau_global_2018_volume <- bind_rows(part_com_equipees_2018[[1]], part_com_pop_equipees_2018[[1]]) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(com_equipee = "V1", pop_equipee = "V2") %>%
   rownames_to_column(var = "type") %>%
   as_tibble() %>%
   mutate(date = "2018")
@@ -71,13 +81,13 @@ write.csv2(part_com_equipees_2018[[1]], "BPE/sorties/part_unites_spatiales_equip
 write.csv2(part_com_pop_equipees_2018[[1]], "BPE/sorties/part_unites_spatiales_equipements/pop_equipee_2018.csv")
 
 # ------------------ graphique 2018 ----------------------
-tableau_global_2018 %>%
+tableau_global_2018_part %>%
   ggplot(aes(part_com_equipee, part_pop_equipee)) +
   geom_point() +
   xlab("Part des communes équipées (%)") +
   ylab("Part de la population directement desservie (%)") +
   theme_julie() +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2018, Insee",
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
        subtitle = "Population desservie et communes équipées de services publics en France métropolitaine en 2018") +
   ggrepel::geom_text_repel(
     mapping = aes(part_com_equipee, part_pop_equipee, label = type), size = 3,
@@ -102,15 +112,17 @@ bpe_2009 <- left_join(x = bpe_ensemble, y = communes_2019 %>% select(INSEE_COM, 
   st_as_sf()
 rm(bpe_ensemble)
 
-# exemple perso à revoir plus tard
+# ------------------ évolution 2009-2018 ----------------------------------
 bpe_2009 <- bpe_2009 %>%
-  select(INSEECOM, TYPE, NOM_COM, `Bureau de poste`, Gendarmerie, Police) %>%
+  select(INSEECOM, TYPE, NOM_COM, `Bureau de poste`, Gendarmerie, Police, `Collège`,
+         `Etablissement santé court séjour`, `Etablissement santé long séjour`,
+         `Etablissement santé moyen séjour`, `Maternité`, Urgences) %>%
   left_join(., y = population %>% select(CODGEO, PMUN09), by = c("INSEECOM" = "CODGEO")) %>%
-  pivot_longer(names_to = "type_equip", values_to = "pres_abs", `Bureau de poste`:Police) %>%
+  st_drop_geometry() %>%
+  pivot_longer(names_to = "type_equip", values_to = "pres_abs", `Bureau de poste`:Urgences) %>%
   mutate(pres_abs = ifelse(is.na(pres_abs), NA, 1)) %>%
   pivot_wider(names_from = "type_equip", values_from = "pres_abs")
 
-## ---------- étude saint-julien
 part_com_equipees_2009 <- bpe_2009 %>%
   select(-INSEECOM :-PMUN09) %>% 
   fonction_part_equip_recup(x = ., y = communes_2019 %>% rename(id = "INSEE_COM"))
@@ -118,7 +130,7 @@ part_com_equipees_2009 <- bpe_2009 %>%
 communes_2019 <- left_join(x = communes_2019, y = population, by = c("INSEE_COM" = "CODGEO"))
 
 part_com_pop_equipees_2009 <- bpe_2009 %>%
-  select(INSEECOM, `Bureau de poste`:Police) %>%
+  select(INSEECOM, `Bureau de poste`:Urgences) %>%
   rename(id = "INSEECOM") %>%
   fonction_part_pop_recup(x = ., y = communes_2019 %>% st_drop_geometry() %>% rename(id = "INSEE_COM", pop = "PMUN09"))
 
@@ -131,6 +143,16 @@ tableau_global_2009 <- bind_rows(part_com_equipees_2009[[2]], part_com_pop_equip
   as_tibble() %>%
   mutate(date = "2009")
 
+# volume
+tableau_global_2009_volume <- bind_rows(part_com_equipees_2009[[1]], part_com_pop_equipees_2009[[1]]) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(com_equipee = "V1", pop_equipee = "V2") %>%
+  rownames_to_column(var = "type") %>%
+  as_tibble() %>%
+  mutate(pop_equipee = pop_equipee/1000000) %>%
+  mutate(date = "2009")
+
 write.csv2(part_com_equipees_2009[[1]], "BPE/sorties/part_unites_spatiales_equipements/communes_equipees_2009.csv")
 write.csv2(part_com_pop_equipees_2009[[1]], "BPE/sorties/part_unites_spatiales_equipements/pop_equipee_2009.csv")
 
@@ -141,7 +163,7 @@ tableau_global_2009 %>%
   xlab("Part des communes équipées (%)") +
   ylab("Part de la population directement desservie (%)") +
   theme_julie() +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2009, Insee",
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2009 (Insee), ADMIN EXPRESS 2019 (IGN)",
        subtitle = "Population desservie et communes équipées de services publics en France métropolitaine en 2009") +
   ggrepel::geom_text_repel(
     mapping = aes(part_com_equipee, part_pop_equipee, label = type), size = 3,
@@ -149,36 +171,77 @@ tableau_global_2009 %>%
   )
 
 
-
-# --------- comparaison rapide 2009-2018 certains éléments
-tableau_global <- tableau_global_2018 %>%
-  filter(type %in% c("Gendarmerie", "Bureau de poste", "Police")) %>%
+# ---------------- tableau global : 2009-2018 pour comparaison des parts --------------------
+tableau_global_part <- tableau_global_2018_part %>%
+  filter(type %in% c("Gendarmerie", "Bureau de poste", "Police", "Collège", "Établissement santé court séjour",
+                     "Établissement santé long séjour", "Établissement santé moyen séjour", "Maternité", "Urgences")) %>%
   bind_rows(., tableau_global_2009)
 
+# En volume :
+tableau_global_volume <- tableau_global_2018_volume %>% 
+  filter(type %in% c("Gendarmerie", "Bureau de poste", "Police", "Collège", "Établissement santé court séjour",
+                     "Établissement santé long séjour", "Établissement santé moyen séjour", "Maternité", "Urgences")) %>%
+  mutate(pop_equipee = pop_equipee/1000000) %>%
+  bind_rows(., tableau_global_2009_volume)
 
-tableau_global %>%
+
+## visualisation
+a <- tableau_global_part %>%
   ggplot(aes(part_com_equipee, part_pop_equipee, color = date)) +
   geom_point() +
+  scale_color_tableau(palette = "Tableau 10") +
   xlab("Part des communes équipées (%)") +
   ylab("Part de la population directement desservie (%)") +
   theme_julie() +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2009, Insee",
-       subtitle = "Population desservie et communes équipées de services publics en France métropolitaine") +
+  theme(legend.position = "none") + # forcer le fait de retirer la légende
+  labs(subtitle = "Population desservie et communes équipées de services publics en France métropolitaine") +
   ggrepel::geom_text_repel(
     mapping = aes(part_com_equipee, part_pop_equipee, label = type, color = date), size = 3,
     box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50',
-  )
+  ) +
+  expand_limits(x = 0, y = 0)
 
 
-# carto rapide : à revoir
+b <- tableau_global_volume %>%
+  ggplot(aes(com_equipee, pop_equipee, color = date)) +
+  geom_point() +
+  scale_color_tableau(palette = "Tableau 10") +
+  xlab("Nombre de communes équipées") +
+  ylab("Population directement desservie (en millions)") +
+  theme_julie() +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)") +
+  ggrepel::geom_text_repel(
+    mapping = aes(com_equipee, pop_equipee, label = type, color = date), size = 3,
+    box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50',
+  ) +
+  expand_limits(x = 0, y = 0)
+
+
+a + b
+
+
+# -------------------- exploration cartographique : évolution 2009-2018 --------------------------
 tmap_mode("view")
 
-bpe_2009 %>% st_as_sf() %>% select(`Bureau de poste`) %>% filter(`Bureau de poste` == 1) %>%
+bpe_2009 <- left_join(x = bpe_2009, y = communes_2019 %>% select(INSEE_COM), by = c("INSEECOM" = "INSEE_COM")) %>%
+  st_as_sf()
+
+bpe_2018_wide <- bpe_2018_wide %>% 
+  left_join(., y = communes_2019, by = c("DEPCOM" = "INSEE_COM")) %>% ungroup() %>%
+  st_as_sf()
+
+# empty geometries : communes qui ont fusionnées avec d'autres entre 2009 et 2019
+any(is.na(st_dimension(bpe_2009)))
+empty_2009 <- bpe_2009[st_is_empty(bpe_2009),,drop=FALSE] # cela concerne donc 4.62 % des communes
+empty_2009 %>% filter(PMUN09 > 1000) %>% nrow() # 40 communes de plus de 1000 habitants en 2009
+
+empty_2018 <- bpe_2018_wide[st_is_empty(bpe_2018_wide),,drop=FALSE] # soit 0.62 % des communes
+
+bpe_2009 %>% select(Gendarmerie) %>% filter(Gendarmerie == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide %>% 
-  left_join(., y = communes_2019, by = c("DEPCOM" = "INSEE_COM")) %>% ungroup() %>%
-  st_as_sf() %>% select(`Agence postale`) %>% 
-  filter(`Agence postale` == 1) %>%
+  select(Gendarmerie) %>% 
+  filter(Gendarmerie == 1) %>%
   mutate(date = "2018") -> `2018`
 
 tm_shape(`2009`) +
@@ -188,21 +251,28 @@ tm_shape(`2009`) +
   tm_fill(col = "darkorange", alpha = 1) +
   tm_borders(col = "black")
 
-## BPE 2013
-bpe_ensemble <- read_excel("BPE/data/bpe2013.xlsx") %>%
-  mutate(dep = substr(depcom, 1, 2)) %>% # récupération du numéro du département
-  filter(dep %ni% c("2A", "2B")) %>% # sans la Corse
-  select(-dep)
 
-bpe_2013 <- left_join(x = bpe_ensemble, y = communes_2019 %>% select(INSEE_COM, TYPE, NOM_COM), by = c("depcom" = "INSEE_COM")) %>%
-  st_as_sf()
+## visualisation : sorties
+periode_2009 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = `2009`, fill = "darkgreen", color = "darkgreen") +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Communes desservies par une Gendarmerie") +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(subtitle = "2009")
 
-rm(bpe_ensemble)
+periode_2018 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = `2018`, fill = "darkgreen", color = "darkgreen") +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
+       subtitle = "2018")
 
-
-population <- population %>%
-  filter(REG != "94")
-
-
-
-
+periode_2009 + periode_2018
