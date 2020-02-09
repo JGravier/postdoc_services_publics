@@ -237,10 +237,10 @@ empty_2009 %>% filter(PMUN09 > 1000) %>% nrow() # 40 communes de plus de 1000 ha
 
 empty_2018 <- bpe_2018_wide[st_is_empty(bpe_2018_wide),,drop=FALSE] # soit 0.62 % des communes
 
-bpe_2009 %>% select(Gendarmerie) %>% filter(Gendarmerie == 1) %>%
+bpe_2009 %>% select(Gendarmerie, INSEECOM) %>% filter(Gendarmerie == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide %>% 
-  select(Gendarmerie) %>% 
+  select(Gendarmerie, DEPCOM) %>% 
   filter(Gendarmerie == 1) %>%
   mutate(date = "2018") -> `2018`
 
@@ -272,7 +272,22 @@ periode_2018 <- ggplot() +
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
-       subtitle = "2018")
+  labs(subtitle = "2018")
 
-periode_2009 + periode_2018
+
+diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM"))
+
+ecart_2009_2018 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), fill = "firebrick4", color = "firebrick4") +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
+       subtitle = "Différence entre 2009 et 2018")
+
+# patchwork :
+periode_2009 + periode_2018 + ecart_2009_2018
+
