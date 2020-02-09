@@ -116,8 +116,8 @@ fonction_part_pop_recup <- function(x, y){
     select(id, pop) %>% # sélection des identifiants et de la population
     left_join(x = ., y = x, by = "id") %>% # jointure entre les deux tableaux
     pivot_longer(-id:-pop, names_to = "equip", values_to = "pres_abs") %>% # données en format long uniquement sur les éléments
-    mutate(pres_abs = ifelse(pres_abs == 1, pop, pres_abs)) %>% # nlle colonne : sachant que si présence, alors population et sinon NA
-    pivot_wider(names_from = "equip", values_from = "pres_abs", values_fn = list(pres_abs = sum)) %>% # format wide
+    mutate(pres_abs = if_else(pres_abs == 1, pop, pres_abs)) %>% # nlle colonne : sachant que si présence, alors population et sinon NA
+    pivot_wider(names_from = "equip", values_from = "pres_abs") %>% # format wide
     summarise_if(is.numeric, sum, na.rm = TRUE) %>% # calcul des sommes des pop des communes ayant tel ou tel élément
     select(-pop)
   somme_pop <- sum(y$pop, na.rm = TRUE) # population totale étudiée
