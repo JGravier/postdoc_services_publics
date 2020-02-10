@@ -848,3 +848,76 @@ b <- au_global_volume %>%
 
 
 a + b
+
+# ------------------------------ exploration cartographique ------------------------------------------------
+# BPE liée aux aires urbaines
+bpe_2009_echelle_aire_urbaine <- bpe_2009_echelle_aire_urbaine %>%
+  left_join(x = ., y = au_2010_pop, by = "AU2010") %>%
+  st_as_sf()
+
+bpe_2018_echelle_aire_urbaine <- bpe_2018_echelle_aire_urbaine %>% 
+  left_join(., y = au_2010_pop, by = "AU2010") %>%
+  st_as_sf()
+
+## empty geometries : communes qui ont fusionnées avec d'autres entre 2009 et 2019
+any(is.na(st_dimension(bpe_2009_echelle_aire_urbaine)))
+# il n'y a pas de vide
+
+
+## exploration carto par type de service
+bpe_2009_echelle_aire_urbaine %>% 
+  select(AU2010, `Etablissement santé court séjour`) %>% 
+  filter(`Etablissement santé court séjour` == 1) %>%
+  mutate(date = "2009") -> `2009`
+bpe_2018_echelle_aire_urbaine %>% 
+  select(AU2010, `Établissement santé moyen séjour`) %>% 
+  filter(`Établissement santé moyen séjour` == 1) %>%
+  mutate(date = "2018") -> `2018`
+
+
+## visualisation : sorties cartographiques
+periode_2009 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = `2009`, fill = "gray30", color = "gray30") +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Aires urbaines desservies par un établissement de santé court séjour") +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(subtitle = "2009")
+
+periode_2018 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = `2018`, fill = "gray30", color = "gray30") +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(subtitle = "2018")
+
+
+diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = "AU2010")
+diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = "AU2010")
+
+couleurs <- c("disparition" = "firebrick4", "apparition" = "dodgerblue4")
+ecart_2009_2018 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), aes(fill = "disparition", color = "disparition")) +
+  geom_sf(data = diff_2018_2009 %>% filter(is.na(date.y)), aes(fill = "apparition", color = "apparition")) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
+       subtitle = "Différence entre 2009 et 2018") +
+  scale_fill_manual(name = "", values = couleurs) + # ajout légende manuellement
+  scale_color_manual(name = "", values = couleurs) # idem pour les contours
+
+# patchwork :
+periode_2009 + periode_2018 + ecart_2009_2018
