@@ -221,8 +221,6 @@ a + b
 
 
 # -------------------- exploration cartographique : évolution 2009-2018 --------------------------
-tmap_mode("view")
-
 bpe_2009 <- left_join(x = bpe_2009, y = communes_2019 %>% select(INSEE_COM), by = c("INSEECOM" = "INSEE_COM")) %>%
   st_as_sf()
 
@@ -230,20 +228,25 @@ bpe_2018_wide <- bpe_2018_wide %>%
   left_join(., y = communes_2019, by = c("DEPCOM" = "INSEE_COM")) %>% ungroup() %>%
   st_as_sf()
 
-# empty geometries : communes qui ont fusionnées avec d'autres entre 2009 et 2019
+## empty geometries : communes qui ont fusionnées avec d'autres entre 2009 et 2019
 any(is.na(st_dimension(bpe_2009)))
-empty_2009 <- bpe_2009[st_is_empty(bpe_2009),,drop=FALSE] # cela concerne donc 4.62 % des communes
+empty_2009 <- bpe_2009[st_is_empty(bpe_2009), , drop = FALSE] # cela concerne donc 4.62 % des communes
 empty_2009 %>% filter(PMUN09 > 1000) %>% nrow() # 40 communes de plus de 1000 habitants en 2009
 
-empty_2018 <- bpe_2018_wide[st_is_empty(bpe_2018_wide),,drop=FALSE] # soit 0.62 % des communes
+empty_2018 <- bpe_2018_wide[st_is_empty(bpe_2018_wide), , drop = FALSE] # soit 0.62 % des communes
 
-bpe_2009 %>% select(Gendarmerie, INSEECOM) %>% filter(Gendarmerie == 1) %>%
+
+## exploration carto par type de service
+
+bpe_2009 %>% select(Police, INSEECOM) %>% 
+  filter(Police == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide %>% 
-  select(Gendarmerie, DEPCOM) %>% 
-  filter(Gendarmerie == 1) %>%
+  select(Police, DEPCOM) %>% 
+  filter(Police == 1) %>%
   mutate(date = "2018") -> `2018`
 
+tmap_mode("view")
 tm_shape(`2009`) +
   tm_fill(col = "darkgreen", alpha = 1) +
   tm_borders(col = "black") +
@@ -252,7 +255,7 @@ tm_shape(`2009`) +
   tm_borders(col = "black")
 
 
-## visualisation : sorties
+## visualisation : sorties cartographiques
 periode_2009 <- ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
   geom_sf(data = `2009`, fill = "darkgreen", color = "darkgreen") +
@@ -260,7 +263,7 @@ periode_2009 <- ggplot() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  ggtitle("Communes desservies par une Gendarmerie") +
+  ggtitle("Communes desservies par un poste de police") +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   labs(subtitle = "2009")
 
@@ -276,17 +279,22 @@ periode_2018 <- ggplot() +
 
 
 diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM"))
+diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM"))
 
+couleurs <- c("disparition" = "firebrick4", "apparition" = "dodgerblue4")
 ecart_2009_2018 <- ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), fill = "firebrick4", color = "firebrick4") +
+  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), aes(fill = "disparition", color = "disparition")) +
+  geom_sf(data = diff_2018_2009 %>% filter(is.na(date.y)), aes(fill = "apparition", color = "apparition")) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
-       subtitle = "Différence entre 2009 et 2018")
+       subtitle = "Différence entre 2009 et 2018") +
+  scale_fill_manual(name = "", values = couleurs) + # ajout légende manuellement
+  scale_color_manual(name = "", values = couleurs) # idem pour les contours
 
 # patchwork :
 periode_2009 + periode_2018 + ecart_2009_2018
