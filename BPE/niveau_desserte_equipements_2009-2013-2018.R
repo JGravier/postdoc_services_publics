@@ -409,6 +409,150 @@ au_2010_pop <- communes_2019_au_2010 %>%
 communes_2019_au_2010 <- communes_2019_au_2010 %>%
   filter(CATAEU2010 %ni% c("300", "400", "120"))
 
+# ------------------------------ exploration cartographique ------------------------------------------------
+# BPE liée aux communes des aires urbaines
+bpe_2009_au <- left_join(x = bpe_2009 %>% st_drop_geometry(), y = communes_2019_au_2010, by = c("INSEECOM" = "CODGEO")) %>%
+  st_as_sf() %>%
+  filter(!is.na(REG.y)) # virer les communes pas dans les aires urbaines
+
+bpe_2018_wide_au <- bpe_2018_wide %>% 
+  select(-ID:-PTOT1876) %>%
+  st_drop_geometry() %>%
+  left_join(., y = communes_2019_au_2010, by = c("DEPCOM" = "CODGEO")) %>% ungroup() %>%
+  st_as_sf() %>%
+  filter(!is.na(REG.y)) # virer les communes pas dans les aires urbaines
+
+## empty geometries : communes qui ont fusionnées avec d'autres entre 2009 et 2019
+any(is.na(st_dimension(bpe_2018_wide_au)))
+# il n'y a pas de vide
+
+
+## exploration carto par type de service
+
+bpe_2009_au %>% select(Urgences, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Urgences == 1) %>%
+  mutate(date = "2009") -> `2009`
+bpe_2018_wide_au %>% 
+  select(Urgences, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Urgences == 1) %>%
+  mutate(date = "2018") -> `2018`
+
+bpe_2009_au %>% select(Police, INSEECOM) %>% 
+  filter(Police == 1) %>%
+  mutate(date = "2009") -> police_2009
+
+## visualisation : sorties cartographiques
+periode_2009 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = `2009`, fill = "darkgreen", color = "darkgreen") +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Communes desservies par un service d'urgences\ndans les aires urbaines") +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(subtitle = "2009")
+
+periode_2018 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = `2018`, fill = "darkgreen", color = "darkgreen") +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(subtitle = "2018")
+
+
+diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM"))
+diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM"))
+
+couleurs <- c("disparition" = "firebrick4", "apparition" = "dodgerblue4")
+ecart_2009_2018 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
+  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), aes(fill = "disparition", color = "disparition")) +
+  geom_sf(data = diff_2018_2009 %>% filter(is.na(date.y)), aes(fill = "apparition", color = "apparition")) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
+       subtitle = "Différence entre 2009 et 2018") +
+  scale_fill_manual(name = "", values = couleurs) + # ajout légende manuellement
+  scale_color_manual(name = "", values = couleurs) # idem pour les contours
+
+# patchwork :
+periode_2009 + periode_2018 + ecart_2009_2018
+
+
+# ------------------------------ exploration statistique (bi) ------------------------------------------------
+## Police et gendarmerie
+diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM")) %>%
+  select(-LIBAU2010.y:-CATAEU2010.y) %>%
+  st_drop_geometry()
+diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM")) %>%
+  rename("INSEECOM" = "DEPCOM") %>%
+  select(-LIBAU2010.y:-CATAEU2010.y) %>%
+  filter(is.na(date.y)) %>%
+  st_drop_geometry()
+
+gendarmerie_police <- diff_2009_2018 %>% 
+  # tableau des gendarmerie existantes en 2009 > adjonction de 2018
+  bind_rows(., diff_2018_2009) %>% 
+  # adjonction des lignes du tableau des "apparitions" entre 2009 et 2018
+  mutate(evolution = if_else(condition = is.na(date.y) & date.x == "2009", 
+                             true = "disparition", 
+                             false = if_else(
+                               condition = is.na(date.y) & date.x == "2018",
+                               true = "apparition",
+                               false = "maintien"
+                             ))) %>%
+  # création conditionnelle de l'évolution en 3 modalités > apparition, disparition, maintien
+  mutate(type_commune_dans_au = if_else(CATAEU2010.x %in% c("111", "211", "221"), # voir métadonnées INSEE
+                                        true = "pôle urbain", 
+                                        false = "couronne")) %>%
+  mutate(evolution_type_espace = str_c(evolution, type_commune_dans_au, sep = " ")) %>%
+  left_join(., y = police_2009 %>% st_drop_geometry(), by = "INSEECOM") %>%
+  mutate(pres_abs_police = if_else(is.na(Police), "non", "oui"))
+
+
+# sortie du tableau
+write.csv2(gendarmerie_police %>%
+             select(-Gendarmerie.x, -Gendarmerie.y, -Police:-date) %>%
+             rename(LIBAU2010 = LIBAU2010.x,
+                    Statut = STATUT.x,
+                    CATAEU2010 = CATAEU2010.x,
+                    date1 = date.x,
+                    date2 = date.y), 
+           "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_tableau_elementaire.csv",
+           fileEncoding = "UTF-8", row.names=FALSE)
+
+
+gendarmerie_police <- table(gendarmerie_police$evolution_type_espace, gendarmerie_police$pres_abs_police)
+khi_deux_gendarmerie_police <- gendarmerie_police %>% chisq.test()
+
+khi_deux_gendarmerie_police[1:3]
+
+write.csv2(khi_deux_gendarmerie_police$observed, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_tableau.csv")
+write.csv2(khi_deux_gendarmerie_police$expected, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_attendu.csv")
+write.csv2(khi_deux_gendarmerie_police$residuals, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_residus_standardises.csv")
+
+my_palette <- colorRampPalette(c("#ff7f0e", "white", "#1f83b4"))(n = 30)  # création de sa propre palette de couleur
+heatmap.2(khi_deux_gendarmerie_police$residuals, Rowv = FALSE, Colv = FALSE, # on ne réordonne pas les lignes et les colonnes
+          col = my_palette, # on utilise la palette de couleur que l'on a créé
+          key = TRUE, denscol = "black", keysize = 1.2, key.title = "résidus\nstandardisés", density.info = "none",
+          dendrogram = 'none', # on ne veut ni de réordonnancement des lignes et des colonnes, ni de dendrogramme tracé
+          trace = 'none',
+          margins = c(7, 14), cexRow = 1, cexCol = 1,
+          main = "Communes des aires urbaines\n en France métropolitaine",
+          xlab = "Présence d'un poste de Police en 2009",
+          ylab = "Évolution de la présence d'une gendarmerie\n dans la commune entre 2009 et 2018")
+
+
 # -------------------- part des communes équipées sur part de la pop desservie 2018 ------------------------------------------------
 bpe_2018_wide_au <- bpe_2018_wide_au %>%
   st_drop_geometry()
@@ -553,149 +697,154 @@ b <- tableau_global_au_volume %>%
 
 a + b
 
-# ------------------------------ exploration cartographique ------------------------------------------------
-# BPE liée aux communes des aires urbaines
-bpe_2009_au <- left_join(x = bpe_2009 %>% st_drop_geometry(), y = communes_2019_au_2010, by = c("INSEECOM" = "CODGEO")) %>%
-  st_as_sf() %>%
-  filter(!is.na(REG.y)) # virer les communes pas dans les aires urbaines
+# --------------------- ECHELLE DES AIRES URBAINES ------------------------------------------
+bpe_2018_echelle_aire_urbaine <- bpe_2018_wide_au %>% 
+  select(Gendarmerie:AU2010) %>% 
+  group_by(AU2010) %>% 
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  pivot_longer(cols = Gendarmerie:`Cour d’appel (CA)`, names_to = "name", values_to = "value") %>%
+  mutate(value = if_else(condition = value > 0, true = 1, false = 0)) %>%
+  pivot_wider(names_from = "name", values_from = "value")
 
-bpe_2018_wide_au <- bpe_2018_wide %>% 
-  select(-ID:-PTOT1876) %>%
+bpe_2009_echelle_aire_urbaine <- bpe_2009_au %>%
   st_drop_geometry() %>%
-  left_join(., y = communes_2019_au_2010, by = c("DEPCOM" = "CODGEO")) %>% ungroup() %>%
-  st_as_sf() %>%
-  filter(!is.na(REG.y)) # virer les communes pas dans les aires urbaines
-
-## empty geometries : communes qui ont fusionnées avec d'autres entre 2009 et 2019
-any(is.na(st_dimension(bpe_2018_wide_au)))
-# il n'y a pas de vide
-
-
-## exploration carto par type de service
-
-bpe_2009_au %>% select(Urgences, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
-  filter(Urgences == 1) %>%
-  mutate(date = "2009") -> `2009`
-bpe_2018_wide_au %>% 
-  select(Urgences, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
-  filter(Urgences == 1) %>%
-  mutate(date = "2018") -> `2018`
-
-bpe_2009_au %>% select(Police, INSEECOM) %>% 
-  filter(Police == 1) %>%
-  mutate(date = "2009") -> police_2009
-
-## visualisation : sorties cartographiques
-periode_2009 <- ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = `2009`, fill = "darkgreen", color = "darkgreen") +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  ggtitle("Communes desservies par un service d'urgences\ndans les aires urbaines") +
-  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
-  labs(subtitle = "2009")
-
-periode_2018 <- ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = `2018`, fill = "darkgreen", color = "darkgreen") +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
-  labs(subtitle = "2018")
+  select(`Bureau de poste`:AU2010) %>%
+  group_by(AU2010) %>% 
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  pivot_longer(cols = `Bureau de poste`:Urgences, names_to = "name", values_to = "value") %>%
+  mutate(value = if_else(condition = value > 0, true = 1, false = 0)) %>%
+  pivot_wider(names_from = "name", values_from = "value")
 
 
-diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM"))
-diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM"))
+# -------- part en 2018 des différents services publics --------------
+part_au_equipee_2018 <- bpe_2018_echelle_aire_urbaine %>%
+  select(-AU2010) %>% 
+  fonction_part_equip_recup(x = ., y = au_2010_pop %>%
+                              rename(id = "AU2010"))
 
-couleurs <- c("disparition" = "firebrick4", "apparition" = "dodgerblue4")
-ecart_2009_2018 <- ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), aes(fill = "disparition", color = "disparition")) +
-  geom_sf(data = diff_2018_2009 %>% filter(is.na(date.y)), aes(fill = "apparition", color = "apparition")) +
-  theme_igray() +
-  theme(axis.text.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks = element_blank()) +
-  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
-       subtitle = "Différence entre 2009 et 2018") +
-  scale_fill_manual(name = "", values = couleurs) + # ajout légende manuellement
-  scale_color_manual(name = "", values = couleurs) # idem pour les contours
-
-# patchwork :
-periode_2009 + periode_2018 + ecart_2009_2018
+part_com_pop_equipees_2018 <- bpe_2018_echelle_aire_urbaine %>%
+  rename(id = "AU2010") %>%
+  fonction_part_pop_recup(x = ., y = au_2010_pop %>%
+                            st_drop_geometry() %>%
+                            rename(id = "AU2010", pop = "population_2016"))
 
 
-# ------------------------------ exploration statistique (bi) ------------------------------------------------
-## Police et gendarmerie
+part_au_2018 <- bind_rows(part_au_equipee_2018[[2]], part_com_pop_equipees_2018[[2]]) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(part_com_equipee = "V1", part_pop_equipee = "V2") %>%
+  rownames_to_column(var = "type") %>%
+  as_tibble() %>%
+  mutate(date = "2018")
+
+volume_au_2018 <- bind_rows(part_au_equipee_2018[[1]], part_com_pop_equipees_2018[[1]]) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(com_equipee = "V1", pop_equipee = "V2") %>%
+  rownames_to_column(var = "type") %>%
+  as_tibble() %>%
+  mutate(date = "2018")
+
+write.csv2(part_au_equipee_2018[[1]], "BPE/sorties/part_unites_spatiales_equipements/AU_equipees_2018.csv",
+           fileEncoding = "UTF-8", row.names=FALSE)
+write.csv2(part_com_pop_equipees_2018[[1]], "BPE/sorties/part_unites_spatiales_equipements/AU_pop_equipee_2018.csv",
+           fileEncoding = "UTF-8", row.names=FALSE)
+
+## graphique
+part_au_2018 %>%
+  ggplot(aes(part_com_equipee, part_pop_equipee)) +
+  geom_point() +
+  xlab("Part des aires urbaines équipées (%)") +
+  ylab("Part de la population directement desservie (%)") +
+  theme_julie() +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
+       subtitle = "Population desservie et AU équipées de services publics en France métropolitaine en 2018") +
+  ggrepel::geom_text_repel(
+    mapping = aes(part_com_equipee, part_pop_equipee, label = type), size = 3,
+    box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50',
+  ) +
+  expand_limits(x = 0, y = 0)
+
+# -------------------- evo part et volume des AU équipées : 2009-2018 --------------------------------------
+part_au_equipee_2009 <- bpe_2009_echelle_aire_urbaine %>%
+  select(`Bureau de poste`:Urgences) %>% 
+  fonction_part_equip_recup(x = ., y = au_2010_pop %>%
+                              rename(id = "AU2010"))
+
+part_pop_au_equipee_2009 <- bpe_2009_echelle_aire_urbaine %>%
+  rename(id = "AU2010") %>%
+  fonction_part_pop_recup(x = ., y = au_2010_pop %>%
+                            st_drop_geometry() %>%
+                            rename(id = "AU2010", pop = "population_2009"))
 
 
-diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM")) %>%
-  select(-LIBAU2010.y:-CATAEU2010.y) %>%
-  st_drop_geometry()
-diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM")) %>%
-  rename("INSEECOM" = "DEPCOM") %>%
-  select(-LIBAU2010.y:-CATAEU2010.y) %>%
-  filter(is.na(date.y)) %>%
-  st_drop_geometry()
+part_au_2009 <- bind_rows(part_au_equipee_2009[[2]], part_pop_au_equipee_2009[[2]]) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(part_com_equipee = "V1", part_pop_equipee = "V2") %>%
+  rownames_to_column(var = "type") %>%
+  as_tibble() %>%
+  mutate(date = "2009")
 
-gendarmerie_police <- diff_2009_2018 %>% 
-  # tableau des gendarmerie existantes en 2009 > adjonction de 2018
-  bind_rows(., diff_2018_2009) %>% 
-  # adjonction des lignes du tableau des "apparitions" entre 2009 et 2018
-  mutate(evolution = if_else(condition = is.na(date.y) & date.x == "2009", 
-                             true = "disparition", 
-                             false = if_else(
-                               condition = is.na(date.y) & date.x == "2018",
-                               true = "apparition",
-                               false = "maintien"
-                             ))) %>%
-  # création conditionnelle de l'évolution en 3 modalités > apparition, disparition, maintien
-  mutate(type_commune_dans_au = if_else(CATAEU2010.x %in% c("111", "211", "221"), # voir métadonnées INSEE
-                                        true = "pôle urbain", 
-                                        false = "couronne")) %>%
-  mutate(evolution_type_espace = str_c(evolution, type_commune_dans_au, sep = " ")) %>%
-  left_join(., y = police_2009 %>% st_drop_geometry(), by = "INSEECOM") %>%
-  mutate(pres_abs_police = if_else(is.na(Police), "non", "oui"))
+# volume
+volume_au_2009 <- bind_rows(part_au_equipee_2009[[1]], part_pop_au_equipee_2009[[1]]) %>%
+  t() %>%
+  as.data.frame() %>%
+  rename(com_equipee = "V1", pop_equipee = "V2") %>%
+  rownames_to_column(var = "type") %>%
+  as_tibble() %>%
+  mutate(pop_equipee = pop_equipee/1000000) %>%
+  mutate(date = "2009")
 
-
-# sortie du tableau
-write.csv2(gendarmerie_police %>%
-             select(-Gendarmerie.x, -Gendarmerie.y, -Police:-date) %>%
-             rename(LIBAU2010 = LIBAU2010.x,
-                    Statut = STATUT.x,
-                    CATAEU2010 = CATAEU2010.x,
-                    date1 = date.x,
-                    date2 = date.y), 
-           "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_tableau_elementaire.csv",
+write.csv2(part_au_equipee_2009[[1]], "BPE/sorties/part_unites_spatiales_equipements/au_equipees_2009.csv",
+           fileEncoding = "UTF-8", row.names=FALSE)
+write.csv2(part_pop_au_equipee_2009[[1]], "BPE/sorties/part_unites_spatiales_equipements/au_pop_equipee_2009.csv",
            fileEncoding = "UTF-8", row.names=FALSE)
 
 
-gendarmerie_police <- table(gendarmerie_police$evolution_type_espace, gendarmerie_police$pres_abs_police)
-khi_deux_gendarmerie_police <- gendarmerie_police %>% chisq.test()
 
-khi_deux_gendarmerie_police[1:3]
+##---------- tableau global relatif aux AU : 2009-2018
+au_global_part <- part_au_2018 %>%
+  filter(type %in% c("Gendarmerie", "Bureau de poste", "Police", "Collège", "Établissement santé court séjour",
+                     "Établissement santé long séjour", "Établissement santé moyen séjour", "Maternité", "Urgences")) %>%
+  bind_rows(., part_au_2009)
 
-write.csv2(khi_deux_gendarmerie_police$observed, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_tableau.csv")
-write.csv2(khi_deux_gendarmerie_police$expected, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_attendu.csv")
-write.csv2(khi_deux_gendarmerie_police$residuals, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_residus_standardises.csv")
-
-my_palette <- colorRampPalette(c("#ff7f0e", "white", "#1f83b4"))(n = 30)  # création de sa propre palette de couleur
-heatmap.2(khi_deux_gendarmerie_police$residuals, Rowv = FALSE, Colv = FALSE, # on ne réordonne pas les lignes et les colonnes
-          col = my_palette, # on utilise la palette de couleur que l'on a créé
-          key = TRUE, denscol = "black", keysize = 1.2, key.title = "résidus\nstandardisés", density.info = "none",
-          dendrogram = 'none', # on ne veut ni de réordonnancement des lignes et des colonnes, ni de dendrogramme tracé
-          trace = 'none',
-          margins = c(7, 14), cexRow = 1, cexCol = 1,
-          main = "Communes des aires urbaines\n en France métropolitaine",
-          xlab = "Présence d'un poste de Police en 2009",
-          ylab = "Évolution de la présence d'une gendarmerie\n dans la commune entre 2009 et 2018")
+# En volume :
+au_global_volume <- volume_au_2018 %>% 
+  filter(type %in% c("Gendarmerie", "Bureau de poste", "Police", "Collège", "Établissement santé court séjour",
+                     "Établissement santé long séjour", "Établissement santé moyen séjour", "Maternité", "Urgences")) %>%
+  mutate(pop_equipee = pop_equipee/1000000) %>%
+  bind_rows(., volume_au_2009)
 
 
+## visualisation
+a <- au_global_part %>%
+  ggplot(aes(part_com_equipee, part_pop_equipee, color = date)) +
+  geom_point() +
+  scale_color_tableau(palette = "Color Blind") +
+  xlab("Part des aires urbaines équipées (%)") +
+  ylab("Part de la population directement desservie (%)") +
+  theme_julie() +
+  theme(legend.position = "none") + # forcer le fait de retirer la légende
+  labs(subtitle = "Aires urbaines équipées de services publics en France métropolitaine") +
+  ggrepel::geom_text_repel(
+    mapping = aes(part_com_equipee, part_pop_equipee, label = type, color = date), size = 3,
+    box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50',
+  )
+
+
+b <- au_global_volume %>%
+  ggplot(aes(com_equipee, pop_equipee, color = date)) +
+  geom_point() +
+  scale_color_tableau(palette = "Color Blind") +
+  xlab("Nombre d'aires urbaines équipées") +
+  ylab("Population directement desservie (en millions)") +
+  theme_julie() +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)") +
+  ggrepel::geom_text_repel(
+    mapping = aes(com_equipee, pop_equipee, label = type, color = date), size = 3,
+    box.padding = 0.35, point.padding = 0.5, segment.color = 'grey50',
+  )
+
+
+a + b
