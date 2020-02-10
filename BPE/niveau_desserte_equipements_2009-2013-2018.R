@@ -4,6 +4,7 @@ library(readxl)
 library(ggthemes)
 library(tmap)
 library(patchwork)
+library(gplots)
 
 source("fonctions_bases.R")
 options(scipen=10000)
@@ -428,11 +429,11 @@ any(is.na(st_dimension(bpe_2018_wide_au)))
 
 ## exploration carto par type de service
 
-bpe_2009_au %>% select(Gendarmerie, INSEECOM) %>% 
+bpe_2009_au %>% select(Gendarmerie, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
   filter(Gendarmerie == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide_au %>% 
-  select(Gendarmerie, DEPCOM) %>% 
+  select(Gendarmerie, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
   filter(Gendarmerie == 1) %>%
   mutate(date = "2018") -> `2018`
 
@@ -489,4 +490,63 @@ periode_2009 + periode_2018 + ecart_2009_2018
 
 
 # mise en relation police et gendarmerie
+diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM")) %>%
+  select(-LIBAU2010.y:-CATAEU2010.y) %>%
+  st_drop_geometry()
+diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM")) %>%
+  rename("INSEECOM" = "DEPCOM") %>%
+  select(-LIBAU2010.y:-CATAEU2010.y) %>%
+  filter(is.na(date.y)) %>%
+  st_drop_geometry()
 
+gendarmerie_police <- diff_2009_2018 %>% 
+  # tableau des gendarmerie existantes en 2009 > adjonction de 2018
+  bind_rows(., diff_2018_2009) %>% 
+  # adjonction des lignes du tableau des "apparitions" entre 2009 et 2018
+  mutate(evolution = if_else(condition = is.na(date.y) & date.x == "2009", 
+                             true = "disparition", 
+                             false = if_else(
+                               condition = is.na(date.y) & date.x == "2018",
+                               true = "apparition",
+                               false = "maintien"
+                             ))) %>%
+  # création conditionnelle de l'évolution en 3 modalités > apparition, disparition, maintien
+  mutate(type_commune_dans_au = if_else(CATAEU2010.x %in% c("111", "211", "221"), # voir métadonnées INSEE
+                                        true = "pôle urbain", 
+                                        false = "couronne")) %>%
+  mutate(evolution_type_espace = str_c(evolution, type_commune_dans_au, sep = " ")) %>%
+  left_join(., y = police_2009 %>% st_drop_geometry(), by = "INSEECOM") %>%
+  mutate(pres_abs_police = if_else(is.na(Police), "non", "oui"))
+
+
+# sortie du tableau
+write.csv2(gendarmerie_police %>%
+             select(-Gendarmerie.x, -Gendarmerie.y, -Police:-date) %>%
+             rename(LIBAU2010 = LIBAU2010.x,
+                    Statut = STATUT.x,
+                    CATAEU2010 = CATAEU2010.x,
+                    date1 = date.x,
+                    date2 = date.y), 
+           "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_tableau_elementaire.csv",
+           fileEncoding = "UTF-8", row.names=FALSE)
+
+
+gendarmerie_police <- table(gendarmerie_police$evolution_type_espace, gendarmerie_police$pres_abs_police)
+khi_deux_gendarmerie_police <- gendarmerie_police %>% chisq.test()
+
+khi_deux_gendarmerie_police[1:3]
+
+write.csv2(khi_deux_gendarmerie_police$observed, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_tableau.csv")
+write.csv2(khi_deux_gendarmerie_police$expected, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_attendu.csv")
+write.csv2(khi_deux_gendarmerie_police$residuals, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_residus_standardises.csv")
+
+my_palette <- colorRampPalette(c("#ff7f0e", "white", "#1f83b4"))(n = 30)  # création de sa propre palette de couleur
+heatmap.2(khi_deux_gendarmerie_police$residuals, Rowv = FALSE, Colv = FALSE, # on ne réordonne pas les lignes et les colonnes
+          col = my_palette, # on utilise la palette de couleur que l'on a créé
+          key = TRUE, denscol = "black", keysize = 1.2, key.title = "résidus\nstandardisés", density.info = "none",
+          dendrogram = 'none', # on ne veut ni de réordonnancement des lignes et des colonnes, ni de dendrogramme tracé
+          trace = 'none',
+          margins = c(7, 14), cexRow = 1, cexCol = 1,
+          main = "Communes des aires urbaines\n en France métropolitaine",
+          xlab = "Présence d'un poste de Police en 2009",
+          ylab = "Évolution de la présence d'une gendarmerie\n dans la commune entre 2009 et 2018")
