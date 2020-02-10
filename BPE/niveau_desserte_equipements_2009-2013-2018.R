@@ -428,22 +428,17 @@ any(is.na(st_dimension(bpe_2018_wide_au)))
 
 ## exploration carto par type de service
 
-bpe_2009_au %>% select(Police, INSEECOM) %>% 
-  filter(Police == 1) %>%
+bpe_2009_au %>% select(Gendarmerie, INSEECOM) %>% 
+  filter(Gendarmerie == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide_au %>% 
-  select(Police, DEPCOM) %>% 
-  filter(Police == 1) %>%
+  select(Gendarmerie, DEPCOM) %>% 
+  filter(Gendarmerie == 1) %>%
   mutate(date = "2018") -> `2018`
 
-tmap_mode("view")
-tm_shape(`2009`) +
-  tm_fill(col = "darkgreen", alpha = 1) +
-  tm_borders(col = "black") +
-  tm_shape(`2018`) +
-  tm_fill(col = "darkorange", alpha = 1) +
-  tm_borders(col = "black")
-
+bpe_2009_au %>% select(Police, INSEECOM) %>% 
+  filter(Police == 1) %>%
+  mutate(date = "2009") -> police_2009
 
 ## visualisation : sorties cartographiques
 periode_2009 <- ggplot() +
@@ -491,3 +486,7 @@ ecart_2009_2018 <- ggplot() +
 
 # patchwork :
 periode_2009 + periode_2018 + ecart_2009_2018
+
+
+# mise en relation police et gendarmerie
+
