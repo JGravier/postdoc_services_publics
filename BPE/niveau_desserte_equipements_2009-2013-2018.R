@@ -429,12 +429,12 @@ any(is.na(st_dimension(bpe_2018_wide_au)))
 
 ## exploration carto par type de service
 
-bpe_2009_au %>% select(Urgences, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
-  filter(Urgences == 1) %>%
+bpe_2009_au %>% select(Gendarmerie, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Gendarmerie == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide_au %>% 
-  select(Urgences, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
-  filter(Urgences == 1) %>%
+  select(Gendarmerie, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Gendarmerie == 1) %>%
   mutate(date = "2018") -> `2018`
 
 bpe_2009_au %>% select(Police, INSEECOM) %>% 
@@ -884,7 +884,7 @@ periode_2009 <- ggplot() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  ggtitle("Aires urbaines desservies par un établissement de santé court séjour") +
+  ggtitle("Aires urbaines desservies par\nun établissement de santé court séjour") +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   labs(subtitle = "2009")
 
