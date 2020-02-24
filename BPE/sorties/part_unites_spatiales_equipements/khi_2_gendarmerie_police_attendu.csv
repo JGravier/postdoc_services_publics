@@ -1,7 +1,7 @@
-"";"non";"oui"
-"apparition couronne";14,9890909090909;3,01090909090909
-"apparition pôle urbain";27,48;5,52
-"disparition couronne";44,9672727272727;9,03272727272727
-"disparition pôle urbain";157,385454545455;31,6145454545455
-"maintien couronne";567,087272727273;113,912727272727
-"maintien pôle urbain";791,090909090909;158,909090909091
+;"non";"oui"
+"apparition couronne";15;3
+"apparition pôle urbain";27;6
+"disparition couronne";45;9
+"disparition pôle urbain";157;32
+"maintien couronne";567;114
+"maintien pôle urbain";791;159
