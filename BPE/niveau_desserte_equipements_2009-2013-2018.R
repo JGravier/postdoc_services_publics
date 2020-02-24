@@ -5,6 +5,7 @@ library(ggthemes)
 library(tmap)
 library(patchwork)
 library(gplots)
+library(classInt)
 
 source("fonctions_bases.R")
 options(scipen=10000)
@@ -423,23 +424,20 @@ bpe_2018_wide_au <- bpe_2018_wide %>%
   filter(!is.na(REG.y)) # virer les communes pas dans les aires urbaines
 
 ## empty geometries : communes qui ont fusionnées avec d'autres entre 2009 et 2019
-any(is.na(st_dimension(bpe_2018_wide_au)))
+any(is.na(st_dimension(bpe_2009_au)))
 # il n'y a pas de vide
 
 
 ## exploration carto par type de service
 
-bpe_2009_au %>% select(Gendarmerie, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+bpe_2009_au %>% select(Gendarmerie, Police, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
   filter(Gendarmerie == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide_au %>% 
-  select(Gendarmerie, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  select(Gendarmerie, Police, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
   filter(Gendarmerie == 1) %>%
   mutate(date = "2018") -> `2018`
 
-bpe_2009_au %>% select(Police, INSEECOM) %>% 
-  filter(Police == 1) %>%
-  mutate(date = "2009") -> police_2009
 
 ## visualisation : sorties cartographiques
 periode_2009 <- ggplot() +
@@ -491,6 +489,18 @@ periode_2009 + periode_2018 + ecart_2009_2018
 
 # ------------------------------ exploration statistique (bi) ------------------------------------------------
 ## Police et gendarmerie
+bpe_2009_au %>% select(Gendarmerie, Police, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Gendarmerie == 1) %>%
+  mutate(date = "2009") -> `2009`
+bpe_2018_wide_au %>% 
+  select(Gendarmerie, Police, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Gendarmerie == 1) %>%
+  mutate(date = "2018") -> `2018`
+
+bpe_2009_au %>% select(Police, INSEECOM) %>% 
+  filter(Police == 1) %>%
+  mutate(date = "2009") -> police_2009
+
 diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM")) %>%
   select(-LIBAU2010.y:-CATAEU2010.y) %>%
   st_drop_geometry()
@@ -535,7 +545,8 @@ write.csv2(gendarmerie_police %>%
 gendarmerie_police <- table(gendarmerie_police$evolution_type_espace, gendarmerie_police$pres_abs_police)
 khi_deux_gendarmerie_police <- gendarmerie_police %>% chisq.test()
 
-khi_deux_gendarmerie_police[1:3]
+write.csv2(khi_deux_gendarmerie_police[1:3], "BPE/sorties/part_unites_spatiales_equipements/khi_2_summary.csv",
+           fileEncoding = "UTF-8", row.names=FALSE)
 
 write.csv2(khi_deux_gendarmerie_police$observed, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_tableau.csv")
 write.csv2(khi_deux_gendarmerie_police$expected, "BPE/sorties/part_unites_spatiales_equipements/khi_2_gendarmerie_police_attendu.csv")
@@ -544,11 +555,11 @@ write.csv2(khi_deux_gendarmerie_police$residuals, "BPE/sorties/part_unites_spati
 my_palette <- colorRampPalette(c("#ff7f0e", "white", "#1f83b4"))(n = 30)  # création de sa propre palette de couleur
 heatmap.2(khi_deux_gendarmerie_police$residuals, Rowv = FALSE, Colv = FALSE, # on ne réordonne pas les lignes et les colonnes
           col = my_palette, # on utilise la palette de couleur que l'on a créé
-          key = TRUE, denscol = "black", keysize = 1.2, key.title = "résidus\nstandardisés", density.info = "none",
+          key = TRUE, denscol = "black", keysize = 1.2, density.info = "none", key.title = "résidus\nstandardisés", 
           dendrogram = 'none', # on ne veut ni de réordonnancement des lignes et des colonnes, ni de dendrogramme tracé
           trace = 'none',
           margins = c(7, 14), cexRow = 1, cexCol = 1,
-          main = "Communes des aires urbaines\n en France métropolitaine",
+          main = "Communes des aires urbaines :\nrésidus standardisés",
           xlab = "Présence d'un poste de Police en 2009",
           ylab = "Évolution de la présence d'une gendarmerie\n dans la commune entre 2009 et 2018")
 
@@ -866,12 +877,12 @@ any(is.na(st_dimension(bpe_2009_echelle_aire_urbaine)))
 
 ## exploration carto par type de service
 bpe_2009_echelle_aire_urbaine %>% 
-  select(AU2010, `Etablissement santé court séjour`) %>% 
-  filter(`Etablissement santé court séjour` == 1) %>%
+  select(AU2010, Maternité) %>% 
+  filter(Maternité == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_echelle_aire_urbaine %>% 
-  select(AU2010, `Établissement santé moyen séjour`) %>% 
-  filter(`Établissement santé moyen séjour` == 1) %>%
+  select(AU2010, Maternité) %>% 
+  filter(Maternité == 1) %>%
   mutate(date = "2018") -> `2018`
 
 
@@ -884,7 +895,7 @@ periode_2009 <- ggplot() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  ggtitle("Aires urbaines desservies par\nun établissement de santé court séjour") +
+  ggtitle("Aires urbaines desservies par\nune maternité") +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   labs(subtitle = "2009")
 
@@ -921,3 +932,59 @@ ecart_2009_2018 <- ggplot() +
 
 # patchwork :
 periode_2009 + periode_2018 + ecart_2009_2018
+
+
+# ---------------- PART DES COMMUNES où les habitants vont vers 1 autre commune pour accéder à 1 ou des services ------
+## exploration carto par type de service
+communes_2019_au_2010 %>% 
+  st_drop_geometry() %>%
+  select(CODGEO, AU2010) %>%
+  left_join(., y = bpe_2018_wide_au, by = c("CODGEO" = "DEPCOM")) %>%
+  select(`Bureau de poste`, `Agence postale`, `Relais poste`, CODGEO, AU2010.x, LIBAU2010, STATUT, CATAEU2010) %>%
+  mutate(avec_sans = if_else(
+    condition = `Bureau de poste` == 1 | `Agence postale` == 1 | `Relais poste` == 1, true = "avec_equipements", false = "sans_equipements"
+  )) %>% 
+  mutate(avec_sans_boolean = if_else(is.na(avec_sans), true = 1, false = 0)) %>%
+  group_by(AU2010.x) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  mutate(date = "2018") -> communes_avec_sans_equipement_au_2018
+
+communes_2019_au_2010 %>% 
+  st_drop_geometry() %>%
+  select(CODGEO, AU2010) %>%
+  left_join(., y = bpe_2009_au, by = c("CODGEO" = "INSEECOM")) %>%
+  select(`Bureau de poste`, CODGEO, AU2010.x, LIBAU2010, STATUT, CATAEU2010) %>%
+  mutate(avec_sans = if_else(
+    condition = `Bureau de poste` == 1, true = "avec_equipements", false = "sans_equipements"
+  )) %>%
+  mutate(avec_sans_boolean = if_else(is.na(avec_sans), true = 1, false = 0)) %>%
+  group_by(AU2010.x) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  mutate(date = "2009") -> communes_avec_sans_equipement_au_2009
+
+communes_avec_sans_equipement_au_2009_2018 <- bind_rows(communes_avec_sans_equipement_au_2018, communes_avec_sans_equipement_au_2009) %>%
+  left_join(., y = au_2010_pop, by = c("AU2010.x" = "AU2010")) %>%
+  mutate(pourc_sans_equipements = avec_sans_boolean/NB_COM*100) %>%
+  filter(pourc_sans_equipements != 0) %>%
+  st_as_sf()
+
+classes <- classIntervals(var = communes_avec_sans_equipement_au_2009_2018$pourc_sans_equipements, n = 7, style = "jenks") # discrétisation de Jenks
+
+# France : cartographie
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = au_2010_pop, fill = "darkorange", color = "grey40") +
+  geom_sf(data = communes_avec_sans_equipement_au_2009_2018, 
+          aes(fill = cut(pourc_sans_equipements, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
+  scale_fill_brewer(name = "Part des communes où les habitants\nvont vers une autre commune\npour accéder aux services étudiés\n(en orange : aires entièrement équipées)", 
+                    palette = "Purples", drop = FALSE, direction = 1) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
+  ggtitle("Bureau de poste, agence postale communale et relais postal en 2018")
+
