@@ -555,7 +555,7 @@ bpe_2009_2018_poste_au %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités..\n Sources : BPE 2013-2018, Insee") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités..\n Sources : BPE 2019-2018, Insee") +
   ggtitle("Bureaux de poste des aires urbaines entre 2009 et 2018 (hors Paris)") +
   facet_wrap(~ annee)
 
