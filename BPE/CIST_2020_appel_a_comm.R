@@ -562,7 +562,7 @@ bpe_2009_2018_poste_au %>%
 # distributions sans les valeurs extrêmes de croissance
 bpe_2009_2018_poste_au %>%
   filter(TCAM != "NaN") %>% # enlever Paris car peu pertinent il me semble
-  filter(TCAM < 100 & TCAM > -100) %>%
+  filter(TCAM < 100 & TCAM > -100) %>% 
   ggplot(aes(x = tailles_2009, y = TCAM, fill = tailles_2009)) +
   geom_violin() +
   theme_julie() +
