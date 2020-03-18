@@ -295,7 +295,7 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel %>%
   filter(vide != TRUE) %>% # on supprime les lignes sans géométrie, soit les services liés aux communes dont la
   # géographie a évoluée entre 2009 et 2019
   mutate(pop2016 = POPULATION) %>%
-  select(-ID, -nom_general, -validite_temporelle, -vide, -POPULATION) %>%
+  select(-ID, -nom_general, -validite_temporelle:-date_validation_thesaurus, -vide, -POPULATION) %>%
   st_drop_geometry() %>%
   pivot_wider(names_from = typologie, values_from = nb_equip) %>%
   left_join(., communes_2019 %>% 
@@ -312,7 +312,7 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
   select(-geom) %>% # on vire la géométrie
   bind_cols(as_tibble(geometry_2) %>%  # on adjoint le WKT
               rename(geometry = value)) %>% # on le renomme
-  select(depcom, NOM_COM, dep, INSEE_REG, annee, thesaurus, pop2016, pop2013:geometry) # réorganisation des colonnes
+  select(depcom, NOM_COM, dep, INSEE_REG, annee, pop2016, pop2013:geometry) # réorganisation des colonnes
   # pour que ce soit plus lisibles
 
 # changer les NA en 0 dans les cas où l'on a des connaissances temporelles (selon la validité)
@@ -341,7 +341,8 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
          `service de l'emploi avec conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec conseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement des bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement des bureaux de poste`, annee = annee),
-         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee))
+         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee),
+         `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
 write.csv(sf_ensemble_thes_fonctionnel_wide, "BDD_services_publics/data_sorties/services_publics_communes.csv", row.names = FALSE)
@@ -428,7 +429,7 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_communes_au %>%
   filter(vide != TRUE) %>% # on supprime les lignes sans géométrie, soit les services liés aux communes dont la
   # géographie a évoluée entre 2009 et 2019
   mutate(pop2016 = POPULATION) %>%
-  select(-ID, -nom_general, -validite_temporelle, -vide, -POPULATION) %>%
+  select(-ID, -nom_general, -validite_temporelle:-date_validation_thesaurus, -vide, -POPULATION) %>%
   st_drop_geometry() %>%
   pivot_wider(names_from = typologie, values_from = nb_equip) %>%
   left_join(., communes_2019 %>% 
@@ -438,13 +439,14 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_communes_au %>%
             by = c("depcom" = "INSEE_COM"))
 
 # extraire les géométries en un WKT en character que l'on adjoint ensuite au dataframe
-geometry_2 <- lwgeom::st_astext(sf_ensemble_thes_fonctionnel_wide$geom)
+geometry_2 <- lwgeom::st_astext(sf_ensemble_thes_fonctionnel_wide$geom) # beaucoup plus rapide comme fonction
+# voir le benchmark : https://github.com/r-spatial/sf/pull/800
 
 sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
   select(-geom, -LIBGEO) %>% # on vire la géométrie et le nom (déjà présent)
   bind_cols(as_tibble(geometry_2) %>%  # on adjoint le WKT
               rename(geometry = value)) %>% # on le renomme
-  select(depcom, NOM_COM, dep, INSEE_REG, annee, thesaurus, pop2016, pop2013:geometry) # réorganisation des colonnes
+  select(depcom, NOM_COM, dep, INSEE_REG, annee, pop2016, pop2013:geometry) # réorganisation des colonnes
 # pour que ce soit plus lisibles
 
 # changer les NA en 0 dans les cas où l'on a des connaissances temporelles (selon la validité)
@@ -459,7 +461,8 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
          `service de l'emploi avec conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec conseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement des bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement des bureaux de poste`, annee = annee),
-         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee))
+         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee),
+         `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
 write.csv(sf_ensemble_thes_fonctionnel_wide, "BDD_services_publics/data_sorties/services_publics_communes_des_aires_urbaines.csv", row.names = FALSE)
@@ -501,7 +504,7 @@ sf_ensemble_au <- au_2010_pop %>%
   left_join(., y = sf_ensemble_communes_au %>% 
               ungroup() %>% 
               st_drop_geometry() %>% 
-              select(-dep, -INSEE_REG, -depcom, -nom_general, -validite_temporelle, -date_validation_thesaurus,
+              select(-dep, -INSEE_REG, -depcom, -nom_general, -validite_temporelle:-date_validation_thesaurus,
                      -POPULATION:-NOM_COM, -pop2013:-LIBGEO, -LIBAU2010, -CATAEU2010) %>%
               group_by(annee, ID, typologie, AU2010) %>%
               summarise_at(vars(nb_equip), sum),
@@ -546,7 +549,8 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
          `service de l'emploi avec conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec conseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement des bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement des bureaux de poste`, annee = annee),
-         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee))
+         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee),
+         `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
 write.csv(sf_ensemble_thes_fonctionnel_wide, "BDD_services_publics/data_sorties/services_publics_aires_urbaines.csv", row.names = FALSE)
