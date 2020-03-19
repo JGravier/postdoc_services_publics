@@ -284,6 +284,26 @@ population <- read_excel("BDD_services_publics/data_entrees/populations_communal
 
 sf_ensemble_thes_fonctionnel <- left_join(x = sf_ensemble_thes_fonctionnel, y = population, by = "depcom")
 
+# sortie dans un format long
+sf_ensemble_thes_fonctionnel_long <- sf_ensemble_thes_fonctionnel %>%
+  ungroup() %>%
+  mutate(vide = st_is_empty(geom)) %>% # nouvelle colonne : est-ce que TRUE/FALSE les géométries sont vides
+  filter(vide != TRUE) %>% # on supprime les lignes sans géométrie, soit les services liés aux communes dont la
+  # géographie a évoluée entre 2009 et 2019
+  mutate(pop2016 = POPULATION) %>%
+  mutate(geometry = geom) %>%
+  st_drop_geometry()
+
+geometry <- lwgeom::st_astext(sf_ensemble_thes_fonctionnel_long$geometry)
+
+sf_ensemble_thes_fonctionnel_long <- sf_ensemble_thes_fonctionnel_long %>%
+  select(-geometry) %>% # on vire la géométrie
+  bind_cols(as_tibble(geometry) %>%  # on adjoint le WKT
+              rename(geometry = value))
+
+write.csv(sf_ensemble_thes_fonctionnel_long, "BDD_services_publics/data_sorties/services_publics_communes_long.csv", row.names = FALSE)
+rm(geometry, sf_ensemble_thes_fonctionnel_long)
+
 # 1) les données en .csv avec information spatiale en WKT, de toutes les communes de France métropolitaine
 # sortie intermédiaire : les communes avec leur géométries (en supprimant celles pour lesquelles on ne les as pas)
 # on va transformer en format wide habituel en géographie : soit un tableau d'info géographique dans le temps
@@ -417,6 +437,23 @@ sf_ensemble_communes_au <- sf_ensemble_thes_fonctionnel %>%
   filter(!is.na(NOM_COM)) # cela revient à supprimer les 730 services publics appartenant à des communes ayant
 # évoluées dans leur géographie
 
+#------------------------->  sortie dans un format long
+sf_ensemble_thes_fonctionnel_long <- sf_ensemble_communes_au %>%
+  ungroup() %>%
+  mutate(pop2016 = POPULATION) %>%
+  mutate(geometry = geom) %>%
+  st_drop_geometry()
+
+geometry <- lwgeom::st_astext(sf_ensemble_thes_fonctionnel_long$geometry)
+
+sf_ensemble_thes_fonctionnel_long <- sf_ensemble_thes_fonctionnel_long %>%
+  select(-geometry) %>% # on vire la géométrie
+  bind_cols(as_tibble(geometry) %>%  # on adjoint le WKT
+              rename(geometry = value))
+
+write.csv(sf_ensemble_thes_fonctionnel_long, "BDD_services_publics/data_sorties/services_publics_communes_des_aires_urbaines_long.csv", row.names = FALSE)
+rm(geometry, sf_ensemble_thes_fonctionnel_long)
+
 
 # ---------------------> sorties des communes des AU
 # 2) les données en .csv avec information spatiale en WKT des communes des aires urbaines
@@ -510,6 +547,22 @@ sf_ensemble_au <- au_2010_pop %>%
               summarise_at(vars(nb_equip), sum),
             by = "AU2010") # mise en relation du sf avec les données relatives aux communes des AU
 
+
+# --------------------> sortie en format long
+sf_ensemble_thes_fonctionnel_long <- sf_ensemble_au %>%
+  ungroup() %>%
+  mutate(geom = geometry) %>%
+  st_drop_geometry()
+
+geometry_2 <- lwgeom::st_astext(sf_ensemble_thes_fonctionnel_long$geom)
+
+sf_ensemble_thes_fonctionnel_long <- sf_ensemble_thes_fonctionnel_long %>%
+  select(-geom) %>% # on vire la géométrie
+  bind_cols(as_tibble(geometry_2)) %>%  # on adjoint le WKT
+  rename(geometry = value)
+
+write.csv(sf_ensemble_thes_fonctionnel_long, "BDD_services_publics/data_sorties/services_publics_aires_urbaines_long.csv", row.names = FALSE)
+rm(geometry_2, sf_ensemble_thes_fonctionnel_long)
 
 # -----------> sortie définitive : 
 # 3) les données en .csv avec information spatiale en WKT des aires urbaines
