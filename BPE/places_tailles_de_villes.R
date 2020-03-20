@@ -12,7 +12,7 @@ sf_services_publics_aires_urbaines <- read.csv("BDD_services_publics/data_sortie
 typologie <- read.csv("BDD_services_publics/data_entrees/services_publics.csv", stringsAsFactors = FALSE, encoding = "UTF-8")
 
 typologie <- typologie %>%
-  select(ID, RGPP, regalien) %>%
+  select(ID, validite_temporelle, RGPP, regalien) %>%
   mutate(ID = as.character(ID))
 
 sf_services_publics_aires_urbaines <- sf_services_publics_aires_urbaines %>%
@@ -71,5 +71,129 @@ write.csv(evo_taille, "BPE/sorties/tailles_villes_places_services_publics/sortie
 rm(evo_taille)
 
 
+# ---------------------- Exploration typologie services publics -------------------------------
+sf_services_publics_aires_urbaines <- sf_services_publics_aires_urbaines %>%
+  mutate(densite_equip = if_else(annee == "2018", true = nb_equip/pop2016*10000, 
+                                           if_else(annee == "2013", 
+                                                   true = nb_equip/pop2013*10000, 
+                                                   false = nb_equip/pop1999*10000))) %>%
+  mutate(typologie = if_else(typologie == "équipements juridictionnels d'ordre judiciaire",
+                             true = "équipements juridictionnels\nd'ordre judiciaire",
+                             false = typologie)) %>%
+  mutate(typologie = if_else(typologie == "établissement public d'éducation supérieure (filières de formation dans des établissements exclusivement publics)",
+                             true = "établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics)",
+                             false = typologie)) %>%
+  mutate(typologie = if_else(typologie == "établissement public d'éducation supérieure (filières de formation dans des établissements publics ou privés)",
+                             true = "établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés)",
+                             false = typologie)) %>%
+  mutate(typologie = if_else(typologie == "service postal de remplacement des bureaux de poste",
+                             true = "service postal de remplacement\ndes bureaux de poste",
+                             false = typologie)) %>%
+  mutate(typologie = if_else(typologie == "service de l'emploi avec conseiller spécialisé",
+                             true = "service de l'emploi avec\nconseiller spécialisé",
+                             false = typologie)) %>%
+  mutate(typologie = if_else(typologie == "ervice de l'emploi sans conseiller spécialisé",
+                             true = "service de l'emploi sans\nconseiller spécialisé",
+                             false = typologie))
 
+
+
+# évolution 2009-2013-2018 : violin plot
+scales::show_col(tableau_color_pal(palette = "Color Blind")(20))
+scales::show_col(tableau_color_pal(palette = "Summer")(20))
+ma_palette_2009_2018 <- c("#1170aa", "#a3acb9", "#b60a1c", "#fc7d0b", "#ffbc79", "#309143", "#57606c")
+
+# selon les tailles des villes et la typologie de sp
+sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  ggplot() +
+  geom_violin(aes(x = typologie, y = densite_equip, fill = typologie)) +
+  scale_fill_manual(values = ma_palette_2009_2018) +
+  coord_flip() +
+  theme_julie() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("densité de service pour 10 000 habitants") +
+  facet_grid(annee ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Évolution des services publics selon les tailles des aires urbaines en France métropolitaine")
+
+sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  filter(tailles_2016 != "petite\n(< 30.000 hab.)") %>%
+  ggplot() +
+  geom_violin(aes(x = typologie, y = densite_equip, fill = typologie)) +
+  scale_fill_manual(values = ma_palette_2009_2018) +
+  coord_flip() +
+  theme_julie() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("densité de service pour 10 000 habitants") +
+  facet_grid(annee ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Évolution des services publics des moyennes et grandes aires urbaines en France métropolitaine")
+
+
+# selon les tailles de villes (en fin de période) et l'impact direct de la RGPP :
+sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  ggplot() +
+  geom_violin(aes(x = RGPP, y = densite_equip, fill = RGPP)) +
+  scale_fill_manual(values = ma_palette_2009_2018) +
+  coord_flip() +
+  theme_julie() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("nombre de service") +
+  facet_grid(annee ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Évolution des services publics selon les tailles des aires urbaines en France métropolitaine")
+# on ne voit pas d'évolution très notable, ce qui est d'ailleurs très intéressant ! c'est contre intuitif à échelle si agrégée
+
+# et si on regarde en volume ? (pas intéressant)
+# et en prenant à la fois la typo mais également la RGPP ?
+sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  ggplot() +
+  geom_violin(aes(x = typologie, y = densite_equip, fill = RGPP)) +
+  scale_fill_manual(values = ma_palette_2009_2018) +
+  coord_flip() +
+  theme_julie() +
+  ylab("densité de service pour 10 000 habitants") +
+  facet_grid(annee ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Évolution des services publics des moyennes et petites aires urbaines en France métropolitaine")
+
+
+
+# évolution 2013-2018 : violin plot
+scales::show_col(tableau_color_pal(palette = "Color Blind")(20))
+scales::show_col(tableau_color_pal(palette = "Summer")(20))
+ma_palette_2013_2018 <- c("#1170aa", "#a3acb9", "#b60a1c", "#fc7d0b", "#ffbc79", "#309143", "#57606c")
+
+# selon les tailles des villes et la typologie de sp
+sf_services_publics_aires_urbaines %>%
+  ggplot() +
+  geom_violin(aes(x = typologie, y = densite_equip, fill = typologie), show.legend = FALSE) +
+  scale_fill_tableau(palette = "Tableau 20") +
+  coord_flip() +
+  theme_julie() +
+  ylab("densité de service pour 10 000 habitants") +
+  facet_grid(annee ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Évolution des services publics selon les tailles des aires urbaines en France métropolitaine")
+
+sf_services_publics_aires_urbaines %>%
+  filter(tailles_2016 != "petite\n(< 30.000 hab.)") %>%
+  ggplot() +
+  geom_violin(aes(x = typologie, y = densite_equip, fill = typologie)) +
+  scale_fill_tableau(palette = "Tableau 20") +
+  coord_flip() +
+  theme_julie() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("densité de service pour 10 000 habitants") +
+  facet_grid(annee ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Évolution des services publics des moyennes et grandes aires urbaines en France métropolitaine")
 
