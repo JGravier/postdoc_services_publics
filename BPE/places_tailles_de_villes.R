@@ -1,7 +1,8 @@
 library(tidyverse)
 library(ggthemes)
 library(sf)
-library(tmap)
+library(classInt)
+library(colorspace)
 
 source("fonctions_bases.R")
 
@@ -333,3 +334,73 @@ evolution2009_2018 %>%
        subtitle = "Services publics des aires urbaines en France métropolitaine")
 
 
+# ----> cartographie
+# création d'un objet sf
+geometry1 <- st_as_sfc(evolution2009_2018$geometry, crs = 2154)
+evolution2009_2018 <- evolution2009_2018 %>%
+  mutate(geometry = geometry1) %>%
+  st_as_sf()
+rm(geometry1)
+
+france <- read_sf("BPE/data_communes_au/REGION.shp", stringsAsFactors = FALSE, options = "ENCODING=UTF-8") %>%
+  st_set_crs(2154) %>% # epsg : 2154, Lambert 93
+  filter(NOM_REG != "Corse") # sans la Corse
+
+
+# Police et gendarmerie nationale
+classes <- evolution2009_2018 %>% 
+  filter(typologie == "police et gendarmerie nationales ") %>%
+  filter(TCAM != "NaN") %>%
+  filter(TCAM != "Inf")
+classes <- classIntervals(var = classes$TCAM, n = 7, style = "jenks") # discrétisation de Jenks
+classes$brks[2] <- -99 # change "duplicate"
+classes$brks
+classes$brks[4] <- -2 
+classes$brks[5] <- 0 
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = evolution2009_2018 %>% select(LIBAU2010) %>% unique(), fill = "grey80", color = "grey70") +
+  geom_sf(data = evolution2009_2018 %>% 
+            filter(typologie == "police et gendarmerie nationales "), 
+          aes(fill = cut(TCAM, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
+  scale_fill_brewer(name = "TCAM", palette = "RdYlGn", drop = FALSE, direction = 1) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Police et gendarmerie nationale") +
+  facet_wrap(~annees)
+
+
+# équipements juridictionnels\nd'ordre judiciaire
+classes <- evolution2009_2018 %>% 
+  filter(typologie == "équipements juridictionnels\nd'ordre judiciaire ") %>%
+  filter(TCAM != "NaN") %>%
+  filter(TCAM != "Inf")
+classes <- classIntervals(var = classes$TCAM, n = 5, style = "jenks") # discrétisation de Jenks
+classes$brks[2] <- -99 # change "duplicate"
+classes$brks
+classes$brks[4] <- 0 
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = evolution2009_2018 %>% select(LIBAU2010) %>% unique(), fill = "grey80", color = "grey70") +
+  geom_sf(data = evolution2009_2018 %>% 
+            filter(typologie == "police et gendarmerie nationales "), 
+          aes(fill = cut(TCAM, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
+  scale_fill_brewer(name = "TCAM", palette = "RdYlGn", drop = FALSE, direction = 1) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Équipements juridictionnels d'ordre judiciaire") +
+  facet_wrap(~annees)
