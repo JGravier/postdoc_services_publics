@@ -5,7 +5,7 @@ library(tmap)
 
 source("fonctions_bases.R")
 
-# ----------------------------- tailles AU -----------------------------------
+# ----------------------------- data : tailles AU -----------------------------------
 sf_services_publics_aires_urbaines <- read.csv("BDD_services_publics/data_sorties/services_publics_aires_urbaines_long.csv",
                                                stringsAsFactors = FALSE, header = TRUE, encoding = "Latin1")
 
@@ -71,7 +71,6 @@ write.csv(evo_taille, "BPE/sorties/tailles_villes_places_services_publics/sortie
 rm(evo_taille)
 
 
-# ---------------------- Exploration typologie services publics -------------------------------
 sf_services_publics_aires_urbaines <- sf_services_publics_aires_urbaines %>%
   mutate(densite_equip = if_else(annee == "2018", true = nb_equip/pop2016*10000, 
                                            if_else(annee == "2013", 
@@ -92,12 +91,13 @@ sf_services_publics_aires_urbaines <- sf_services_publics_aires_urbaines %>%
   mutate(typologie = if_else(typologie == "service de l'emploi avec conseiller spécialisé",
                              true = "service de l'emploi avec\nconseiller spécialisé",
                              false = typologie)) %>%
-  mutate(typologie = if_else(typologie == "ervice de l'emploi sans conseiller spécialisé",
+  mutate(typologie = if_else(typologie == "service de l'emploi sans conseiller spécialisé",
                              true = "service de l'emploi sans\nconseiller spécialisé",
                              false = typologie))
 
 
 
+# ---------------------- explo : densité de services publics -------------------------------
 # évolution 2009-2013-2018 : violin plot
 scales::show_col(tableau_color_pal(palette = "Color Blind")(20))
 scales::show_col(tableau_color_pal(palette = "Summer")(20))
@@ -144,7 +144,7 @@ sf_services_publics_aires_urbaines %>%
   theme_julie() +
   theme(axis.title.y=element_blank(),
         axis.text.y=element_blank()) +
-  ylab("nombre de service") +
+  ylab("densité de service pour 10 000 habitant") +
   facet_grid(annee ~ tailles_2016) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
        subtitle = "Évolution des services publics selon les tailles des aires urbaines en France métropolitaine")
@@ -196,4 +196,140 @@ sf_services_publics_aires_urbaines %>%
   facet_grid(annee ~ tailles_2016) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
        subtitle = "Évolution des services publics des moyennes et grandes aires urbaines en France métropolitaine")
+
+
+# ---------------------- explo : TCAM des services publics -------------------------------
+# transformation du tableau long en tableau wide pour calculer les TCAM:
+sf_sp_au_wide_nb_equip <- sf_services_publics_aires_urbaines %>%
+  select(-ID, -RGPP, -regalien, -densite_equip, -validite_temporelle) %>%
+  mutate(nb_equip = as.double(nb_equip)) %>%
+  pivot_wider(names_from = typologie, values_from = nb_equip)
+
+# fonction aux 3 dates : transformer les NA en 0 quand c'est nécessaire afin de voir les disparitions
+na_en_zero_2009_a_2018 <- function(x, annee){
+  x <- if_else(condition = annee == "2009" & is.na(x), true = 0, false = x)
+  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
+  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
+  return(x)
+}
+
+na_en_zero_2013_a_2018 <- function(x, annee){
+  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
+  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
+  return(x)
+}
+
+sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
+  mutate(`police et gendarmerie nationales` = na_en_zero_2009_a_2018(x = `police et gendarmerie nationales`, annee = annee),
+         `bureau de poste` = na_en_zero_2009_a_2018(x = `bureau de poste`, annee = annee),
+         `équipements juridictionnels\nd'ordre judiciaire` = na_en_zero_2009_a_2018(x = `équipements juridictionnels\nd'ordre judiciaire`, annee = annee),
+         `établissement public d'éducation secondaire` = na_en_zero_2009_a_2018(x = `établissement public d'éducation secondaire`, annee = annee),
+         `établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés)` = na_en_zero_2009_a_2018(x = `établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés)`, annee = annee),
+         `établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics)` = na_en_zero_2009_a_2018(x = `établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics)`, annee = annee),
+         `service de l'emploi avec\nconseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec\nconseiller spécialisé`, annee = annee),
+         `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
+         `service postal de remplacement\ndes bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement\ndes bureaux de poste`, annee = annee),
+         `service de l'emploi sans\nconseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans\nconseiller spécialisé`, annee = annee),
+         `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
+
+
+# maintenant : calcul des TCAM 2009-2013
+sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
+  select(-AU2010:-pop1968, -TAU2016, -NB_COM, -tailles_1999) %>%
+  pivot_longer(cols = `police et gendarmerie nationales`:`direction des finances publiques`, 
+               names_to = "typologie", values_to = "nb_equip") %>%
+  mutate(typologie = str_c(annee, typologie, sep = "_")) %>%
+  select(-annee) %>%
+  pivot_wider(names_from = typologie, values_from = nb_equip)
+
+
+# flemme d'écrire tous les TCAM en ligne de code...
+# mais je là ne vois pas d'autres solutions (il y en a forcément.. groupmf) :
+sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
+  mutate(`police et gendarmerie nationales 2009-2013` = TCAM(datefin = `2013_police et gendarmerie nationales`, 
+                                                             datedebut = `2009_police et gendarmerie nationales`, 
+                                                             nbannee = 4)) %>%
+  mutate(`bureau de poste 2009-2013` = TCAM(datefin = `2013_bureau de poste`, 
+                                                             datedebut = `2009_bureau de poste`, 
+                                                             nbannee = 4)) %>%
+  mutate(`équipements juridictionnels\nd'ordre judiciaire 2009-2013` = TCAM(datefin = `2013_équipements juridictionnels\nd'ordre judiciaire`, 
+                                                             datedebut = `2009_équipements juridictionnels\nd'ordre judiciaire`, 
+                                                             nbannee = 4)) %>%
+  mutate(`établissement public d'éducation secondaire 2009-2013` = TCAM(datefin = `2013_établissement public d'éducation secondaire`, 
+                                            datedebut = `2009_établissement public d'éducation secondaire`, 
+                                            nbannee = 4)) %>%
+  mutate(`établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés) 2009-2013` = TCAM(datefin = `2013_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés)`, 
+                                                                        datedebut = `2009_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés)`, 
+                                                                        nbannee = 4)) %>%
+  mutate(`établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics) 2009-2013` = TCAM(datefin = `2013_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics)`, 
+                                                                                                                                            datedebut = `2009_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics)`, 
+                                                                                                                                            nbannee = 4)) %>%
+  mutate(`établissement public ou privé de santé 2009-2013` = TCAM(datefin = `2013_établissement public ou privé de santé`, 
+                                                                            datedebut = `2009_établissement public ou privé de santé`, 
+                                                                            nbannee = 4)) %>%
+  mutate(`police et gendarmerie nationales 2013-2018` = TCAM(datefin = `2018_police et gendarmerie nationales`, 
+                                                             datedebut = `2013_police et gendarmerie nationales`, 
+                                                             nbannee = 5)) %>%
+  mutate(`bureau de poste 2013-2018` = TCAM(datefin = `2018_bureau de poste`, 
+                                            datedebut = `2013_bureau de poste`, 
+                                            nbannee = 5)) %>%
+  mutate(`équipements juridictionnels\nd'ordre judiciaire 2013-2018` = TCAM(datefin = `2018_équipements juridictionnels\nd'ordre judiciaire`, 
+                                                                            datedebut = `2013_équipements juridictionnels\nd'ordre judiciaire`, 
+                                                                            nbannee = 5)) %>%
+  mutate(`établissement public d'éducation secondaire 2013-2018` = TCAM(datefin = `2018_établissement public d'éducation secondaire`, 
+                                                                        datedebut = `2013_établissement public d'éducation secondaire`, 
+                                                                        nbannee = 5)) %>%
+  mutate(`établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés) 2013-2018` = TCAM(datefin = `2018_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés)`, 
+                                                                                                                                            datedebut = `2013_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements publics ou privés)`, 
+                                                                                                                                            nbannee = 5)) %>%
+  mutate(`établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics) 2013-2018` = TCAM(datefin = `2018_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics)`, 
+                                                                                                                                                datedebut = `2013_établissement public d'éducation supérieure\n(filières de formation dans\ndes établissements exclusivement publics)`, 
+                                                                                                                                                nbannee = 5)) %>%
+  mutate(`établissement public ou privé de santé 2013-2018` = TCAM(datefin = `2018_établissement public ou privé de santé`, 
+                                                                   datedebut = `2013_établissement public ou privé de santé`, 
+                                                                   nbannee = 5)) %>%
+  mutate(`service de l'emploi avec\nconseiller spécialisé 2013-2018` = TCAM(datefin = `2018_service de l'emploi avec\nconseiller spécialisé`, 
+                                                                   datedebut = `2013_service de l'emploi avec\nconseiller spécialisé`, 
+                                                                   nbannee = 5)) %>%
+  mutate(`service de l'emploi sans\nconseiller spécialisé 2013-2018` = TCAM(datefin = `2018_service de l'emploi sans\nconseiller spécialisé`, 
+                                                                   datedebut = `2013_service de l'emploi sans\nconseiller spécialisé`, 
+                                                                   nbannee = 5)) %>%
+  mutate(`direction des finances publiques 2013-2018` = TCAM(datefin = `2018_direction des finances publiques`, 
+                                                                   datedebut = `2013_direction des finances publiques`, 
+                                                                   nbannee = 5)) %>%
+  mutate(`service postal de remplacement\ndes bureaux de poste 2013-2018` = TCAM(datefin = `2018_service postal de remplacement\ndes bureaux de poste`, 
+                                                                   datedebut = `2013_service postal de remplacement\ndes bureaux de poste`, 
+                                                                   nbannee = 5))
+
+
+# ----------------> analyse des 7 sp étudiables sur toute la durée de l'étude : 2009-2018
+evolution2009_2018 <- sf_sp_au_wide_nb_equip[,37:50]
+evolution2009_2018 <- sf_sp_au_wide_nb_equip %>%
+  select(LIBAU2010:tailles_2016) %>%
+  bind_cols(evolution2009_2018)
+
+evolution2009_2018 <- evolution2009_2018 %>%
+  pivot_longer(cols = `police et gendarmerie nationales 2009-2013`:`établissement public ou privé de santé 2013-2018`,
+               names_to = "typologie", values_to = "TCAM") %>%
+  mutate(annees = str_extract_all(string = typologie, pattern = "2009-2013", simplify = TRUE)) %>% # évite le NA ici pour ligne suivante
+  mutate(annees = if_else(annees != "2009-2013", "2013-2018", "2009-2013")) %>%
+  mutate(typologie = str_remove_all(string = typologie, pattern = "2009-2013")) %>%
+  mutate(typologie = str_remove_all(string = typologie, pattern = "2013-2018"))
+
+evolution2009_2018 %>% filter(TCAM == "NaN") # ceux avec en début et en fin de période 0 équipement
+
+evolution2009_2018 %>%
+  filter(TCAM > -20 & TCAM < 20) %>%
+  ggplot() +
+  geom_violin(aes(x = typologie, y = TCAM, fill = typologie)) +
+  scale_fill_manual(values = ma_palette_2009_2018) +
+  coord_flip() +
+  theme_julie() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("taux de croissance annuel moyen du nombre de services (sup. à -20% et inf. à +20%)") +
+  facet_grid(annees ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Services publics des aires urbaines en France métropolitaine")
+
 
