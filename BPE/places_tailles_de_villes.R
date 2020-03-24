@@ -203,19 +203,6 @@ sf_sp_au_wide_nb_equip <- sf_services_publics_aires_urbaines %>%
   pivot_wider(names_from = typologie, values_from = nb_equip)
 
 # fonction aux 3 dates : transformer les NA en 0 quand c'est nécessaire afin de voir les disparitions
-na_en_zero_2009_a_2018 <- function(x, annee){
-  x <- if_else(condition = annee == "2009" & is.na(x), true = 0, false = x)
-  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
-  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
-  return(x)
-}
-
-na_en_zero_2013_a_2018 <- function(x, annee){
-  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
-  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
-  return(x)
-}
-
 sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
   mutate(`police et gendarmerie nationales` = na_en_zero_2009_a_2018(x = `police et gendarmerie nationales`, annee = annee),
          `bureau de poste` = na_en_zero_2009_a_2018(x = `bureau de poste`, annee = annee),
@@ -627,3 +614,73 @@ evolution2009_2018_densite_RGPP %>%
        subtitle = "Services publics des aires urbaines en France métropolitaine (hors Poste)")
 
 write.csv(evolution2009_2018_densite_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_densite_equip_2009-2018_hors_Poste.csv", row.names = FALSE)
+
+
+# ---------------------------- evo population -------------------------------------------------------
+evo_pop_aire_urbaine <- sf_services_publics_aires_urbaines %>%
+  select(AU2010:LIBAU2010, tailles_2016, geometry) %>%
+  unique()
+
+evo_pop_aire_urbaine <- evo_pop_aire_urbaine %>%
+  mutate(pop_2013_2016 = TCAM(datefin = pop2016, datedebut = pop2013, nbannee = 3)) %>%
+  mutate(pop_2009_2013 = TCAM(datefin = pop2013, datedebut = pop2009, nbannee = 4)) %>%
+  mutate(pop_2006_2009 = TCAM(datefin = pop2009, datedebut = pop2006, nbannee = 3)) %>%
+  mutate(pop_1999_2006 = TCAM(datefin = pop2006, datedebut = pop1999, nbannee = 7))
+
+geometry_1 <- st_as_sfc(evo_pop_aire_urbaine$geometry, crs = 2154)
+evo_pop_aire_urbaine <- evo_pop_aire_urbaine %>%
+  mutate(geometry = geometry_1) %>%
+  st_as_sf()
+rm(geometry_1)
+
+# petite carte pour avoir une idée perso de l'évolution
+evo_pop_aire_urbaine_carto <- evo_pop_aire_urbaine %>%
+  st_drop_geometry() %>%
+  pivot_longer(cols = starts_with(match = "pop_"), names_to = "annees", values_to = "tcam") %>%
+  mutate(annees = str_sub(string = annees, start = 5, end = 13), # récupération des années
+         annees = str_replace_all(string = annees, pattern = "_", replacement = "-")) %>%
+  left_join(., y = evo_pop_aire_urbaine %>% select(AU2010, geometry), by = "AU2010") %>%
+  st_as_sf()
+
+
+# cartographie
+# préalbalement, découpage en classes
+classes <- evo_pop_aire_urbaine_carto %>%
+  filter(tcam < 7 & tcam > -9) # ce sont toutes les AU qui ont vu de gros changements de délimitation géo. des 
+  # communes infra-AU
+classes <- classIntervals(var = classes$tcam, n = 7, style = "jenks") # discrétisation de Jenks
+classes
+# revoir manuellement
+classes$brks[3] <- 0
+classes$brks[4] <- 1
+ma_palette_evo_pop <- c("#4575b4", "#91bfdb", "#f7f7f7", "#ffffbf", "#fee090", "#fc8d59", "#d73027")
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = evo_pop_aire_urbaine, fill = "grey80", color = "grey70") +
+  geom_sf(data = evo_pop_aire_urbaine_carto %>%
+            filter(tcam < 7 & tcam > -9),
+          aes(fill = cut(tcam, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
+  scale_fill_manual(values = ma_palette_evo_pop, name = "Taux de croissance\nannuel moyen") +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_julie() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources: pop. et délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Évolution démographique des aires urbaines de France métropolitaine") +
+  facet_wrap(~annees)
+
+ggsave(filename = "evo_pop_aires_urbaines.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures", device = "png",
+       width = 20, height = 24, units = "cm")
+
+
+
+
+
+
+
+
