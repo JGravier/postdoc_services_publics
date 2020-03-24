@@ -72,6 +72,35 @@ tab_ecart_pearson_residus <- function(x){
 }
 
 
+#' considérer la différence entre l'absence d'information (NA) et l'inexistence d'un service (0)
+#' en transformant les NA en 0 aux dates étudiables pour tel ou tel service public
+#' période chronologique analysée 2009-2018, avec trois dates : 2009, 2013, 2018
+#' @param x tableau d'information géographique composé de plusieurs dates où chaque ligne correspond à une
+#' unité géographique observée à une date données (voir Pumain, Saint-Julien, L'analyse spatiale, Tome 1)
+#' @param annee correspond à la variable relative à l'année d'observation
+#' @return données recomposées où les NA sont remplacés par des 0
+na_en_zero_2009_a_2018 <- function(x, annee){
+  x <- if_else(condition = annee == "2009" & is.na(x), true = 0, false = x)
+  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
+  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
+  return(x)
+}
+
+
+#' considérer la différence entre l'absence d'information (NA) et l'inexistence d'un service (0)
+#' en transformant les NA en 0 aux dates étudiables pour tel ou tel service public
+#' période chronologique analysée 2013-2018, avec deux dates : 2013, 2018
+#' @param x tableau d'information géographique composé de plusieurs dates où chaque ligne correspond à une
+#' unité géographique observée à une date données (voir Pumain, Saint-Julien, L'analyse spatiale, Tome 1)
+#' @param annee correspond à la variable relative à l'année d'observation
+#' @return données recomposées où les NA sont remplacés par des 0
+na_en_zero_2013_a_2018 <- function(x, annee){
+  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
+  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
+  return(x)
+}
+
+
 ### Nouveau tableau avec une structure différente que le tableau initial
 
 #' calcul de la part des unités spatiales (US) ayant tel ou tel élément par rapport à l'ensemble des US
