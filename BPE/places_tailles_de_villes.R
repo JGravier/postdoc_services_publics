@@ -2,7 +2,6 @@ library(tidyverse)
 library(ggthemes)
 library(sf)
 library(classInt)
-library(colorspace)
 
 source("fonctions_bases.R")
 
@@ -219,7 +218,7 @@ sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
 
 # maintenant : calcul des TCAM 2009-2013
 sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
-  select(-AU2010:-pop1968, -TAU2016, -NB_COM, -tailles_1999) %>%
+  select(-pop2016:-pop1968, -TAU2016, -NB_COM, -tailles_1999) %>%
   pivot_longer(cols = `police et gendarmerie nationales`:`direction des finances publiques`, 
                names_to = "typologie", values_to = "nb_equip") %>%
   mutate(typologie = str_c(annee, typologie, sep = "_")) %>%
@@ -287,9 +286,9 @@ sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
 
 
 # ----------------> analyse des 7 sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018 <- sf_sp_au_wide_nb_equip[,37:50]
+evolution2009_2018 <- sf_sp_au_wide_nb_equip[,38:51]
 evolution2009_2018 <- sf_sp_au_wide_nb_equip %>%
-  select(LIBAU2010:tailles_2016) %>%
+  select(AU2010:tailles_2016) %>%
   bind_cols(evolution2009_2018)
 
 evolution2009_2018 <- evolution2009_2018 %>%
@@ -413,7 +412,7 @@ sf_sp_au_wide_densite <- sf_sp_au_wide_densite %>%
 
 # maintenant : calcul des TCAM 2009-2013
 sf_sp_au_wide_densite <- sf_sp_au_wide_densite %>%
-  select(-AU2010:-pop1968, -TAU2016, -NB_COM, -tailles_1999) %>%
+  select(-pop2016:-pop1968, -TAU2016, -NB_COM, -tailles_1999) %>%
   pivot_longer(cols = `police et gendarmerie nationales`:`direction des finances publiques`, 
                names_to = "typologie", values_to = "densite_equip") %>%
   mutate(typologie = str_c(annee, typologie, sep = "_")) %>%
@@ -480,9 +479,9 @@ sf_sp_au_wide_densite <- sf_sp_au_wide_densite %>%
                                                                                  nbannee = 5))
 
 # ----------------> analyse des 7 sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018_densite <- sf_sp_au_wide_densite[,37:50]
+evolution2009_2018_densite <- sf_sp_au_wide_densite[,38:51]
 evolution2009_2018_densite <- sf_sp_au_wide_densite %>%
-  select(LIBAU2010:tailles_2016) %>%
+  select(AU2010:tailles_2016) %>%
   bind_cols(evolution2009_2018_densite)
 
 evolution2009_2018_densite <- evolution2009_2018_densite %>%
@@ -516,8 +515,9 @@ write.csv(evolution2009_2018_densite, "BPE/sorties/tailles_villes_places_service
 # transformation du tableau long en tableau wide pour calculer les TCAM:
 sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
   filter(ID %ni% c("2", "3", "4", "5", "6")) %>% # on supprime les équipements non connus en 2009
-  select(LIBAU2010, geometry, tailles_2016, RGPP, annee, nb_equip) %>%
-  group_by(LIBAU2010, geometry, tailles_2016, RGPP, annee) %>%
+  # "2" : les bureaux de Poste ; à garder ou à virer selon l'analyse
+  select(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee, nb_equip) %>%
+  group_by(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee) %>%
   summarise_if(is.numeric, sum) %>%
   ungroup() %>%
   mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
@@ -533,9 +533,9 @@ sf_sp_au_wide_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
 
 
 # ----------------> analyse des sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP[,10:13]
+evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP[,11:14]
 evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
-  select(LIBAU2010:tailles_2016) %>%
+  select(AU2010:tailles_2016) %>%
   bind_cols(evolution2009_2018_nb_RGPP)
 
 evolution2009_2018_nb_RGPP <- evolution2009_2018_nb_RGPP %>%
@@ -561,15 +561,16 @@ evolution2009_2018_nb_RGPP %>%
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
        subtitle = "Services publics des aires urbaines en France métropolitaine (hors Poste)")
 
-write.csv(evolution2009_2018_nb_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_equip_2009-2018_hors poste.csv", row.names = FALSE)
+write.csv(evolution2009_2018_nb_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_equip_2009-2018_hors_Poste.csv", row.names = FALSE)
 
 
 # ---------------------- TCAM densité RGPP -------------------------------
 # transformation du tableau long en tableau wide pour calculer les TCAM:
 sf_sp_au_wide_densite_RGPP <- sf_services_publics_aires_urbaines %>%
   filter(ID %ni% c("2", "3", "4", "5", "6")) %>% # on supprime les équipements non connus en 2009
-  select(LIBAU2010, geometry, tailles_2016, RGPP, annee, densite_equip) %>%
-  group_by(LIBAU2010, geometry, tailles_2016, RGPP, annee) %>%
+  # "2" : les bureaux de Poste ; à garder ou à virer selon l'analyse
+  select(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee, densite_equip) %>%
+  group_by(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee) %>%
   summarise_if(is.numeric, sum) %>%
   ungroup() %>%
   mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
@@ -585,9 +586,9 @@ sf_sp_au_wide_densite_RGPP <- sf_sp_au_wide_densite_RGPP %>%
 
 
 # ----------------> analyse des sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018_densite_RGPP <- sf_sp_au_wide_densite_RGPP[,10:13]
+evolution2009_2018_densite_RGPP <- sf_sp_au_wide_densite_RGPP[,11:14]
 evolution2009_2018_densite_RGPP <- sf_sp_au_wide_densite_RGPP %>%
-  select(LIBAU2010:tailles_2016) %>%
+  select(AU2010:tailles_2016) %>%
   bind_cols(evolution2009_2018_densite_RGPP)
 
 evolution2009_2018_densite_RGPP <- evolution2009_2018_densite_RGPP %>%
@@ -642,6 +643,7 @@ evo_pop_aire_urbaine_carto <- evo_pop_aire_urbaine %>%
   left_join(., y = evo_pop_aire_urbaine %>% select(AU2010, geometry), by = "AU2010") %>%
   st_as_sf()
 
+write.csv(evo_pop_aire_urbaine %>% st_drop_geometry(), "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_demographie.csv", row.names = FALSE)
 
 # cartographie
 # préalbalement, découpage en classes
