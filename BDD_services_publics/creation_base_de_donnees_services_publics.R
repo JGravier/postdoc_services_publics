@@ -154,11 +154,6 @@ write.csv(ensemble_thesaurus_fonctionnel, "BDD_services_publics/data_sorties/int
 
 
 # ------------------------------ données spatiales ---------------------------
-## fond France
-france <- read_sf("BDD_services_publics/data_spatiales/REGION.shp", stringsAsFactors = FALSE, options = "ENCODING=Latin1") %>%
-  st_set_crs(2154) %>% # epsg : 2154, Lambert 93
-  filter(NOM_REG != "Corse") # sans la Corse
-
 ## communes : population 2016 dans la délimitation 2019
 communes_2019 <- read_sf("BDD_services_publics/data_spatiales/COMMUNES.shp", stringsAsFactors = FALSE, options = "ENCODING=Latin1") %>%
   filter(INSEE_DEP %ni% c("2A", "2B")) %>% # sans la Corse
@@ -272,10 +267,11 @@ rm(nb_equip_annee, deuxmilleneuf, deuxmille13, deuxmille18)
 # -----------------------> création du tableau des services à échelle communale : toutes les communes
 population <- read_excel("BDD_services_publics/data_entrees/populations_communales_arrondissements_donnees_temporelles_geographie_2017.xlsx") %>%
   filter(REG %ni% c("01", "02", "03", "04", "06", "94")) %>% # sans outre-mer & Corse
-  select(CODGEO, PMUN13, PMUN09, PSDC99, PSDC90, PSDC82, PSDC75, PSDC68) %>%
+  select(CODGEO, PMUN13, PMUN09, PMUN06, PSDC99, PSDC90, PSDC82, PSDC75, PSDC68) %>%
   rename(depcom = CODGEO,
          pop2013 = PMUN13,
-         pop2009 = PMUN09, 
+         pop2009 = PMUN09,
+         pop2006 = PMUN06,
          pop1999 = PSDC99,
          pop1990 = PSDC90,
          pop1982 = PSDC82,
@@ -335,22 +331,7 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
   select(depcom, NOM_COM, dep, INSEE_REG, annee, pop2016, pop2013:geometry) # réorganisation des colonnes
   # pour que ce soit plus lisibles
 
-# changer les NA en 0 dans les cas où l'on a des connaissances temporelles (selon la validité)
-
-# fonction aux 3 dates
-na_en_zero_2009_a_2018 <- function(x, annee){
-  x <- if_else(condition = annee == "2009" & is.na(x), true = 0, false = x)
-  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
-  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
-  return(x)
-}
-
-na_en_zero_2013_a_2018 <- function(x, annee){
-  x <- if_else(condition = annee == "2013" & is.na(x), true = 0, false = x)
-  x <- if_else(condition = annee == "2018" & is.na(x), true = 0, false = x)
-  return(x)
-}
-
+# changer les NA en 0 dans les cas où l'on a des connaissances temporelles (selon la validité temporelle du service)
 sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
   mutate(`police et gendarmerie nationales` = na_en_zero_2009_a_2018(x = `police et gendarmerie nationales`, annee = annee),
          `bureau de poste` = na_en_zero_2009_a_2018(x = `bureau de poste`, annee = annee),
