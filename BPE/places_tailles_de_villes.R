@@ -347,7 +347,7 @@ ggplot() +
   geom_sf(data = evolution2009_2018 %>% 
             filter(typologie == "police et gendarmerie nationales "), 
           aes(fill = cut(TCAM, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
-  scale_fill_brewer(name = "TCAM", palette = "RdYlGn", drop = FALSE, direction = 1) +
+  scale_fill_brewer(name = "TCAM", palette = "RdYlBu", drop = FALSE, direction = -1) +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
@@ -653,8 +653,8 @@ classes <- evo_pop_aire_urbaine_carto %>%
 classes <- classIntervals(var = classes$tcam, n = 7, style = "jenks") # discrétisation de Jenks
 classes
 # revoir manuellement
-classes$brks[3] <- 0
-classes$brks[4] <- 1
+classes$brks[3] <- -0.2
+classes$brks[4] <- 0.2
 ma_palette_evo_pop <- c("#4575b4", "#91bfdb", "#f7f7f7", "#ffffbf", "#fee090", "#fc8d59", "#d73027")
 
 ggplot() +
@@ -677,11 +677,44 @@ ggplot() +
 
 ggsave(filename = "evo_pop_aires_urbaines.png", plot = last_plot(), 
        path = "BPE/sorties/tailles_villes_places_services_publics/figures", device = "png",
-       width = 20, height = 24, units = "cm")
+       width = 21, height = 29.7, units = "cm")
 
 
+# ---------------------- TCAM nb d'équipements tous services confondus -------------------------------
+# transformation du tableau long en tableau wide pour calculer les TCAM :
+sf_all_sp_au_wide_nb_equip <- sf_services_publics_aires_urbaines %>%
+  group_by(AU2010, geometry, validite_temporelle, tailles_2016, annee) %>%
+  select(-pop2016:-pop1968, -NB_COM, -densite_equip) %>%
+  summarise_if(is.numeric, sum, na.rm = FALSE) %>% 
+  pivot_wider(names_from = annee, values_from = nb_equip)
+
+# existe-t-il des villes qui ont perdu la totalité de leurs services publics ?
+# période 2009-2013-2018
+sf_all_sp_au_wide_nb_equip %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  view() # oui, il y en a
+
+# transformation des NA sur les périodes 2013 et 2018 en 0 (implique une disparition) :
+sf_all_sp_au_wide_nb_equip <- sf_all_sp_au_wide_nb_equip %>%
+  mutate(`2013` = if_else(condition = is.na(`2013`), true = 0, false = as.double(`2013`)),
+         `2018` = if_else(condition = is.na(`2018`), true = 0, false = as.double(`2018`)))
 
 
+# tableau général :
+tab_all_nb_equip_tcam <- sf_all_sp_au_wide_nb_equip %>%
+  ungroup() %>%
+  group_by(validite_temporelle, tailles_2016) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  mutate(`2009-2013` = TCAM(datefin = `2013`, datedebut = `2009`, nbannee = 4),
+         `2013-2018` = TCAM(datefin = `2018`, datedebut = `2013`, nbannee = 5))
+
+write.csv2(tab_all_nb_equip_tcam, 
+           file = "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_generale_all_sp_tailles.csv", row.names = FALSE)
+
+# calcul des TCAM
+sf_all_sp_au_wide_nb_equip <- sf_all_sp_au_wide_nb_equip %>%
+  mutate(`2009-2013` = TCAM(datefin = `2013`, datedebut = `2009`, nbannee = 4),
+         `2013-2018` = TCAM(datefin = `2018`, datedebut = `2013`, nbannee = 5))
 
 
 
