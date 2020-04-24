@@ -699,7 +699,6 @@ sf_all_sp_au_wide_nb_equip <- sf_all_sp_au_wide_nb_equip %>%
   mutate(`2013` = if_else(condition = is.na(`2013`), true = 0, false = as.double(`2013`)),
          `2018` = if_else(condition = is.na(`2018`), true = 0, false = as.double(`2018`)))
 
-
 # tableau général :
 tab_all_nb_equip_tcam <- sf_all_sp_au_wide_nb_equip %>%
   ungroup() %>%
@@ -716,6 +715,24 @@ sf_all_sp_au_wide_nb_equip <- sf_all_sp_au_wide_nb_equip %>%
   mutate(`2009-2013` = TCAM(datefin = `2013`, datedebut = `2009`, nbannee = 4),
          `2013-2018` = TCAM(datefin = `2018`, datedebut = `2013`, nbannee = 5))
 
+# visualisation par tailles de villes : 2009-2018
+sf_all_sp_au_wide_nb_equip %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  pivot_longer(cols = `2009-2013`:`2013-2018`, names_to = "annee", values_to = "tcam") %>%
+  filter(tcam > -100 & tcam < 20) %>% # sinon on lit très mal à cause de quelques exceptions
+  ggplot(aes(x = tailles_2016, y = tcam, fill = tailles_2016, colour = tailles_2016)) +
+  geom_violin(show.legend = FALSE, alpha = 0.2) +
+  geom_jitter(show.legend = FALSE, cex = 1.2, alpha = 0.5) +
+  scale_fill_tableau(palette = "Tableau 10") +
+  scale_colour_tableau(palette = "Tableau 10") +
+  theme_julie() +
+  theme(axis.title.y = element_blank()) +
+  ylab("Taux de croissance annuel moyen") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Évolution globale des services publics dans les villes de France métropolitaine") +
+  facet_wrap(~annee) +
+  coord_flip()
 
-
-
+ggsave(filename = "evo_all_sp_tailles_villes.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 25, height = 22, units = "cm")
