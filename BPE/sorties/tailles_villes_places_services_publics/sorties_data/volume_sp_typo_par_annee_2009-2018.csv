@@ -1,0 +1,109 @@
+"rowid";"annee";"typologie";"nombre_total";"taille";"pourc_par_an"
+1;"2009";"police et gendarmerie nationales";1366;"Grande";5,81970006816633
+1;"2009";"équipements juridictionnels
+d'ordre judiciaire";368;"Grande";1,56782549420586
+1;"2009";"établissement public ou privé de santé";1486;"Grande";6,33094751192911
+1;"2009";"bureau de poste";4658;"Grande";19,8449216087253
+1;"2009";"établissement public d'éducation secondaire";4021;"Grande";17,1310497614179
+1;"2009";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";1299;"Grande";5,53425357873211
+1;"2009";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";581;"Grande";2,4752897068848
+1;"2013";"police et gendarmerie nationales";1299;"Grande";5,91260810195721
+1;"2013";"équipements juridictionnels
+d'ordre judiciaire";346;"Grande";1,5748748293127
+1;"2013";"établissement public ou privé de santé";1304;"Grande";5,93536640873919
+1;"2013";"bureau de poste";4218;"Grande";19,1989076012745
+1;"2013";"établissement public d'éducation secondaire";4012;"Grande";18,2612653618571
+1;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";1231;"Grande";5,60309512972235
+1;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";655;"Grande";2,98133818843878
+1;"2018";"police et gendarmerie nationales";1240;"Grande";5,95981928289916
+1;"2018";"équipements juridictionnels
+d'ordre judiciaire";350;"Grande";1,68220705565702
+1;"2018";"établissement public ou privé de santé";1223;"Grande";5,87811208305297
+1;"2018";"bureau de poste";3724;"Grande";17,8986830721907
+1;"2018";"établissement public d'éducation secondaire";4007;"Grande";19,2588676343362
+1;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";1179;"Grande";5,66663462462751
+1;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";665;"Grande";3,19619340574834
+2;"2009";"police et gendarmerie nationales";655;"Moyenne";2,79055896387185
+2;"2009";"équipements juridictionnels
+d'ordre judiciaire";403;"Moyenne";1,71693933197001
+2;"2009";"établissement public ou privé de santé";741;"Moyenne";3,15695296523517
+2;"2009";"bureau de poste";2067;"Moyenne";8,80623721881391
+2;"2009";"établissement public d'éducation secondaire";1507;"Moyenne";6,42041581458759
+2;"2009";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";352;"Moyenne";1,49965916837082
+2;"2009";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";177;"Moyenne";0,754089979550102
+2;"2013";"police et gendarmerie nationales";612;"Moyenne";2,78561675011379
+2;"2013";"équipements juridictionnels
+d'ordre judiciaire";381;"Moyenne";1,73418297678653
+2;"2013";"établissement public ou privé de santé";684;"Moyenne";3,11333636777424
+2;"2013";"bureau de poste";1731;"Moyenne";7,87892580791989
+2;"2013";"établissement public d'éducation secondaire";1486;"Moyenne";6,76376877560309
+2;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";347;"Moyenne";1,57942649066909
+2;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";194;"Moyenne";0,883022303140646
+2;"2018";"police et gendarmerie nationales";590;"Moyenne";2,83572046525041
+2;"2018";"équipements juridictionnels
+d'ordre judiciaire";389;"Moyenne";1,86965298471595
+2;"2018";"établissement public ou privé de santé";643;"Moyenne";3,09045467653561
+2;"2018";"bureau de poste";1481;"Moyenne";7,11813899836586
+2;"2018";"établissement public d'éducation secondaire";1452;"Moyenne";6,97875612803999
+2;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";340;"Moyenne";1,63414399692396
+2;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";199;"Moyenne";0,95645486878785
+3;"2009";"police et gendarmerie nationales";649;"Petite";2,76499659168371
+3;"2009";"équipements juridictionnels
+d'ordre judiciaire";206;"Petite";0,877641445126108
+3;"2009";"établissement public ou privé de santé";643;"Petite";2,73943421949557
+3;"2009";"bureau de poste";993;"Petite";4,23057259713701
+3;"2009";"établissement public d'éducation secondaire";1174;"Petite";5,00170415814588
+3;"2009";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";26;"Petite";0,110770279481936
+3;"2009";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";100;"Petite";0,426039536468984
+3;"2013";"police et gendarmerie nationales";623;"Petite";2,83568502503414
+3;"2013";"équipements juridictionnels
+d'ordre judiciaire";77;"Petite";0,350477924442421
+3;"2013";"établissement public ou privé de santé";584;"Petite";2,65817023213473
+3;"2013";"bureau de poste";904;"Petite";4,11470186618116
+3;"2013";"établissement public d'éducation secondaire";1150;"Petite";5,23441055985435
+3;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";28;"Petite";0,127446517979062
+3;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";104;"Petite";0,473372781065089
+3;"2018";"police et gendarmerie nationales";616;"Petite";2,96068441795636
+3;"2018";"équipements juridictionnels
+d'ordre judiciaire";80;"Petite";0,384504469864462
+3;"2018";"établissement public ou privé de santé";572;"Petite";2,7492069595309
+3;"2018";"bureau de poste";805;"Petite";3,86907622801115
+3;"2018";"établissement public d'éducation secondaire";1119;"Petite";5,37825627222916
+3;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";26;"Petite";0,12496395270595
+3;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";106;"Petite";0,509468422570412

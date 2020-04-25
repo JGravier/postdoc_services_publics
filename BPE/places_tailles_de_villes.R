@@ -685,7 +685,7 @@ ggsave(filename = "evo_pop_aires_urbaines.png", plot = last_plot(),
 sf_all_sp_au_wide_nb_equip <- sf_services_publics_aires_urbaines %>%
   group_by(AU2010, geometry, validite_temporelle, tailles_2016, annee) %>%
   select(-pop2016:-pop1968, -NB_COM, -densite_equip) %>%
-  summarise_if(is.numeric, sum, na.rm = FALSE) %>% 
+  summarise_if(is.numeric, sum, na.rm = FALSE) %>%
   pivot_wider(names_from = annee, values_from = nb_equip)
 
 # existe-t-il des villes qui ont perdu la totalité de leurs services publics ?
@@ -709,6 +709,8 @@ tab_all_nb_equip_tcam <- sf_all_sp_au_wide_nb_equip %>%
 
 write.csv2(tab_all_nb_equip_tcam, 
            file = "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_generale_all_sp_tailles.csv", row.names = FALSE)
+
+rm(tab_all_nb_equip_tcam)
 
 # calcul des TCAM
 sf_all_sp_au_wide_nb_equip <- sf_all_sp_au_wide_nb_equip %>%
@@ -736,3 +738,138 @@ sf_all_sp_au_wide_nb_equip %>%
 ggsave(filename = "evo_all_sp_tailles_villes.png", plot = last_plot(), 
        path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
        width = 25, height = 22, units = "cm")
+
+
+# ---------- quelle part de services représente chaque groupe ? --------------
+# se pose en fait la question de l'importance de La Poste dans ces données ?
+volume_sp_typo_par_annee_validite_2009_2018 <- sf_sp_au_wide_nb_equip %>%
+  group_by(tailles_2016) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  select(starts_with(match = "2009"), starts_with("2013"), starts_with("2018")) %>%
+  rowid_to_column() %>%
+  pivot_longer(cols = -rowid, names_to = "typologie", values_to = "nombre_total") %>%
+  separate(col = typologie, into = c("annee", "typologie"), sep = "_") %>%
+  filter(typologie %ni% c("service de l'emploi avec\nconseiller spécialisé", 
+                          "service de l'emploi sans\nconseiller spécialisé",
+                          "direction des finances publiques",
+                          "service postal de remplacement\ndes bureaux de poste")) %>%
+  mutate(taille = if_else(condition = rowid == 1, "Grande", 
+                          if_else(rowid == 2, "Moyenne", "Petite"))) %>%
+  group_by(annee) %>%
+  mutate(pourc_par_an = nombre_total/sum(nombre_total)*100) %>%
+  ungroup()
+
+write.csv2(volume_sp_typo_par_annee_validite_2009_2018, 
+           file = "BPE/sorties/tailles_villes_places_services_publics/sorties_data/volume_sp_typo_par_annee_2009-2018.csv", row.names = FALSE)
+
+# visualisation
+volume_sp_typo_par_annee_validite_2009_2018 %>%
+  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_tableau(palette = "Classic 10") +
+  theme_julie() +
+  theme(axis.title.y = element_blank()) +
+  xlab("Part du service dans l'ensemble des services par an") +
+  facet_wrap(~taille) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Taille de villes")
+
+ggsave(filename = "part_services_validite_2009-2018.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.3.part_service_dans_sp", device = "png",
+       width = 20, height = 15, units = "cm")
+
+# idem mais sur la période 2013-2018 (services que l'on peut suivre sur ces dates)
+volume_sp_typo_par_annee_validite_2013_2018 <- sf_sp_au_wide_nb_equip %>%
+  group_by(tailles_2016) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  select(starts_with("2013"), starts_with("2018")) %>%
+  rowid_to_column() %>%
+  pivot_longer(cols = -rowid, names_to = "typologie", values_to = "nombre_total") %>%
+  separate(col = typologie, into = c("annee", "typologie"), sep = "_") %>%
+  mutate(taille = if_else(condition = rowid == 1, "Grande", 
+                          if_else(rowid == 2, "Moyenne", "Petite"))) %>%
+  group_by(annee) %>%
+  mutate(pourc_par_an = nombre_total/sum(nombre_total)*100) %>%
+  ungroup()
+
+write.csv2(volume_sp_typo_par_annee_validite_2013_2018, 
+           file = "BPE/sorties/tailles_villes_places_services_publics/sorties_data/volume_sp_typo_par_annee_2013-2018.csv", row.names = FALSE)
+
+# visualisation
+volume_sp_typo_par_annee_validite_2013_2018 %>%
+  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_tableau(palette = "Classic 10") +
+  theme_julie() +
+  theme(axis.title.y = element_blank()) +
+  xlab("Part du service dans l'ensemble des services par an") +
+  facet_wrap(~taille) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Taille de villes")
+
+ggsave(filename = "part_services_validite_2013-2018.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.3.part_service_dans_sp", device = "png",
+       width = 25, height = 21, units = "cm")
+
+
+# de manière générale, sans prendre en considération les tailles des villes
+volume_sp_typo_par_annee_validite_2009_2018 <- sf_sp_au_wide_nb_equip %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  select(starts_with(match = "2009"), starts_with("2013"), starts_with("2018")) %>%
+  rowid_to_column() %>%
+  pivot_longer(cols = -rowid, names_to = "typologie", values_to = "nombre_total") %>%
+  separate(col = typologie, into = c("annee", "typologie"), sep = "_") %>%
+  filter(typologie %ni% c("service de l'emploi avec\nconseiller spécialisé", 
+                          "service de l'emploi sans\nconseiller spécialisé",
+                          "direction des finances publiques",
+                          "service postal de remplacement\ndes bureaux de poste")) %>%
+  group_by(annee) %>%
+  mutate(pourc_par_an = nombre_total/sum(nombre_total)*100) %>%
+  ungroup()
+
+write.csv2(volume_sp_typo_par_annee_validite_2009_2018, 
+           file = "BPE/sorties/tailles_villes_places_services_publics/sorties_data/volume_sp_typo_par_annee_2009-2018_hors_tailles.csv", row.names = FALSE)
+
+# visualisation
+volume_sp_typo_par_annee_validite_2009_2018 %>%
+  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_tableau(palette = "Classic 10") +
+  theme_julie() +
+  theme(axis.title.y = element_blank()) +
+  xlab("Part du service dans l'ensemble des services par an") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Services étudiables entre 2009 et 2018")
+
+ggsave(filename = "part_services_validite_2009-2018_general.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.3.part_service_dans_sp", device = "png",
+       width = 20, height = 15, units = "cm")
+
+# idem mais sur la période 2013-2018 (services que l'on peut suivre sur ces dates)
+volume_sp_typo_par_annee_validite_2013_2018 <- sf_sp_au_wide_nb_equip %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  select(starts_with("2013"), starts_with("2018")) %>%
+  rowid_to_column() %>%
+  pivot_longer(cols = -rowid, names_to = "typologie", values_to = "nombre_total") %>%
+  separate(col = typologie, into = c("annee", "typologie"), sep = "_") %>%
+  group_by(annee) %>%
+  mutate(pourc_par_an = nombre_total/sum(nombre_total)*100) %>%
+  ungroup()
+
+write.csv2(volume_sp_typo_par_annee_validite_2013_2018, 
+           file = "BPE/sorties/tailles_villes_places_services_publics/sorties_data/volume_sp_typo_par_annee_2013-2018_hors_tailles.csv", row.names = FALSE)
+
+# visualisation
+volume_sp_typo_par_annee_validite_2013_2018 %>%
+  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_tableau(palette = "Classic 10") +
+  theme_julie() +
+  theme(axis.title.y = element_blank()) +
+  xlab("Part du service dans l'ensemble des services par an") +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Services étudiables entre 2013 et 2018")
+
+ggsave(filename = "part_services_validite_2013-2018_general.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.3.part_service_dans_sp", device = "png",
+       width = 25, height = 21, units = "cm")
