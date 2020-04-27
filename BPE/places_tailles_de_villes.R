@@ -212,7 +212,6 @@ sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
          `service de l'emploi avec\nconseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec\nconseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement\ndes bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement\ndes bureaux de poste`, annee = annee),
-         `service de l'emploi sans\nconseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans\nconseiller spécialisé`, annee = annee),
          `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
@@ -274,9 +273,6 @@ sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
   mutate(`service de l'emploi avec\nconseiller spécialisé 2013-2018` = TCAM(datefin = `2018_service de l'emploi avec\nconseiller spécialisé`, 
                                                                    datedebut = `2013_service de l'emploi avec\nconseiller spécialisé`, 
                                                                    nbannee = 5)) %>%
-  mutate(`service de l'emploi sans\nconseiller spécialisé 2013-2018` = TCAM(datefin = `2018_service de l'emploi sans\nconseiller spécialisé`, 
-                                                                   datedebut = `2013_service de l'emploi sans\nconseiller spécialisé`, 
-                                                                   nbannee = 5)) %>%
   mutate(`direction des finances publiques 2013-2018` = TCAM(datefin = `2018_direction des finances publiques`, 
                                                                    datedebut = `2013_direction des finances publiques`, 
                                                                    nbannee = 5)) %>%
@@ -286,7 +282,7 @@ sf_sp_au_wide_nb_equip <- sf_sp_au_wide_nb_equip %>%
 
 
 # ----------------> analyse des 7 sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018 <- sf_sp_au_wide_nb_equip[,38:51]
+evolution2009_2018 <- sf_sp_au_wide_nb_equip[,35:48]
 evolution2009_2018 <- sf_sp_au_wide_nb_equip %>%
   select(AU2010:tailles_2016) %>%
   bind_cols(evolution2009_2018)
@@ -406,7 +402,6 @@ sf_sp_au_wide_densite <- sf_sp_au_wide_densite %>%
          `service de l'emploi avec\nconseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec\nconseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement\ndes bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement\ndes bureaux de poste`, annee = annee),
-         `service de l'emploi sans\nconseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans\nconseiller spécialisé`, annee = annee),
          `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
@@ -468,9 +463,6 @@ sf_sp_au_wide_densite <- sf_sp_au_wide_densite %>%
   mutate(`service de l'emploi avec\nconseiller spécialisé 2013-2018` = TCAM(datefin = `2018_service de l'emploi avec\nconseiller spécialisé`, 
                                                                             datedebut = `2013_service de l'emploi avec\nconseiller spécialisé`, 
                                                                             nbannee = 5)) %>%
-  mutate(`service de l'emploi sans\nconseiller spécialisé 2013-2018` = TCAM(datefin = `2018_service de l'emploi sans\nconseiller spécialisé`, 
-                                                                            datedebut = `2013_service de l'emploi sans\nconseiller spécialisé`, 
-                                                                            nbannee = 5)) %>%
   mutate(`direction des finances publiques 2013-2018` = TCAM(datefin = `2018_direction des finances publiques`, 
                                                              datedebut = `2013_direction des finances publiques`, 
                                                              nbannee = 5)) %>%
@@ -479,7 +471,7 @@ sf_sp_au_wide_densite <- sf_sp_au_wide_densite %>%
                                                                                  nbannee = 5))
 
 # ----------------> analyse des 7 sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018_densite <- sf_sp_au_wide_densite[,38:51]
+evolution2009_2018_densite <- sf_sp_au_wide_densite[,35:48]
 evolution2009_2018_densite <- sf_sp_au_wide_densite %>%
   select(AU2010:tailles_2016) %>%
   bind_cols(evolution2009_2018_densite)
@@ -709,7 +701,7 @@ volume_sp_typo_par_annee_validite_2009_2018 %>%
   scale_fill_tableau(palette = "Classic 10") +
   theme_julie() +
   theme(axis.title.y = element_blank()) +
-  xlab("Part du service dans l'ensemble des services par an") +
+  xlab("Part du service dans l'ensemble des services (par an)") +
   facet_wrap(~taille) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
        subtitle = "Taille de villes")
@@ -831,7 +823,8 @@ sf_all_sp_au_wide_nb_equip %>%
 
 # transformation des NA sur les périodes 2013 et 2018 en 0 (implique une disparition) :
 sf_all_sp_au_wide_nb_equip <- sf_all_sp_au_wide_nb_equip %>%
-  mutate(`2013` = if_else(condition = is.na(`2013`), true = 0, false = as.double(`2013`)),
+  mutate(`2009` = if_else(condition = is.na(`2009`), true = 0, false = as.double(`2009`)),
+         `2013` = if_else(condition = is.na(`2013`), true = 0, false = as.double(`2013`)),
          `2018` = if_else(condition = is.na(`2018`), true = 0, false = as.double(`2018`)))
 
 # tableau général (revu au final plus bas)
@@ -907,7 +900,8 @@ tab_2009_2018_tcam_services <- sf_services_publics_aires_urbaines %>%
 
 # transformation des NA sur les périodes 2013 et 2018 en 0 (implique une disparition) :
 tab_2009_2018_tcam_services <- tab_2009_2018_tcam_services %>%
-  mutate(`2013` = if_else(condition = is.na(`2013`), true = 0, false = as.double(`2013`)),
+  mutate(`2009` = if_else(condition = is.na(`2009`), true = 0, false = as.double(`2009`)),
+         `2013` = if_else(condition = is.na(`2013`), true = 0, false = as.double(`2013`)),
          `2018` = if_else(condition = is.na(`2018`), true = 0, false = as.double(`2018`))) %>%
   mutate(`2009-2018` = TCAM(datefin = `2018`, datedebut = `2009`, nbannee = 9),
          `2009-2013` = TCAM(datefin = `2013`, datedebut = `2009`, nbannee = 4),

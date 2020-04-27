@@ -1,115 +1,103 @@
 "rowid";"annee";"typologie";"nombre_total";"taille";"pourc_par_an"
-1;"2013";"police et gendarmerie nationales";1299;"Grande";4,05456020975092
+1;"2013";"police et gendarmerie nationales";1299;"Grande";4,17068002311693
 1;"2013";"équipements juridictionnels
-d'ordre judiciaire";346;"Grande";1,07996753854797
-1;"2013";"établissement public ou privé de santé";1304;"Grande";4,07016667707098
-1;"2013";"bureau de poste";4218;"Grande";13,1656158312004
-1;"2013";"établissement public d'éducation secondaire";4012;"Grande";12,5226293776141
+d'ordre judiciaire";346;"Grande";1,11089706543376
+1;"2013";"établissement public ou privé de santé";1304;"Grande";4,186733448918
+1;"2013";"bureau de poste";4218;"Grande";13,5426700057792
+1;"2013";"établissement public d'éducation secondaire";4012;"Grande";12,8812688627753
 1;"2013";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements exclusivement publics)";1231;"Grande";3,84231225419814
+des établissements exclusivement publics)";1231;"Grande";3,95235343222244
 1;"2013";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements publics ou privés)";655;"Grande";2,04444721892752
+des établissements publics ou privés)";655;"Grande";2,10299877993964
 1;"2013";"service postal de remplacement
-des bureaux de poste";1533;"Grande";4,78494288032961
+des bureaux de poste";1533;"Grande";4,92198035060682
 1;"2013";"service de l'emploi avec
-conseiller spécialisé";603;"Grande";1,88213995879893
-1;"2013";"service de l'emploi sans
-conseiller spécialisé";513;"Grande";1,60122354703789
-1;"2013";"direction des finances publiques";2549;"Grande";7,95617703976528
-1;"2018";"police et gendarmerie nationales";1240;"Grande";3,96927016645326
+conseiller spécialisé";603;"Grande";1,93604315160855
+1;"2013";"direction des finances publiques";2549;"Grande";8,18403647338342
+1;"2018";"police et gendarmerie nationales";1240;"Grande";4,03212694696452
 1;"2018";"équipements juridictionnels
-d'ordre judiciaire";350;"Grande";1,12035851472471
-1;"2018";"établissement public ou privé de santé";1223;"Grande";3,91485275288092
-1;"2018";"bureau de poste";3724;"Grande";11,9206145966709
-1;"2018";"établissement public d'éducation secondaire";4007;"Grande";12,8265044814341
+d'ordre judiciaire";350;"Grande";1,13810034793353
+1;"2018";"établissement public ou privé de santé";1223;"Grande";3,97684778720775
+1;"2018";"bureau de poste";3724;"Grande";12,1093877020128
+1;"2018";"établissement public d'éducation secondaire";4007;"Grande";13,0296231261991
 1;"2018";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements exclusivement publics)";1179;"Grande";3,77400768245839
+des établissements exclusivement publics)";1179;"Grande";3,83377231489611
 1;"2018";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements publics ou privés)";665;"Grande";2,12868117797695
+des établissements publics ou privés)";665;"Grande";2,16239066107372
 1;"2018";"service postal de remplacement
-des bureaux de poste";2157;"Grande";6,90460947503201
+des bureaux de poste";2157;"Grande";7,01394985855038
 1;"2018";"service de l'emploi avec
-conseiller spécialisé";525;"Grande";1,68053777208707
-1;"2018";"service de l'emploi sans
-conseiller spécialisé";227;"Grande";0,72663252240717
-1;"2018";"direction des finances publiques";2406;"Grande";7,70166453265045
-2;"2013";"police et gendarmerie nationales";612;"Moyenne";1,91023159997503
+conseiller spécialisé";525;"Grande";1,7071505219003
+1;"2018";"direction des finances publiques";2406;"Grande";7,8236269632231
+2;"2013";"police et gendarmerie nationales";612;"Moyenne";1,96493931805047
 2;"2013";"équipements juridictionnels
-d'ordre judiciaire";381;"Moyenne";1,18921280978838
-2;"2013";"établissement public ou privé de santé";684;"Moyenne";2,13496472938386
-2;"2013";"bureau de poste";1731;"Moyenne";5,40295898620388
-2;"2013";"établissement public d'éducation secondaire";1486;"Moyenne";4,63824208752107
+d'ordre judiciaire";381;"Moyenne";1,22327104604123
+2;"2013";"établissement public ou privé de santé";684;"Moyenne";2,19610864958582
+2;"2013";"bureau de poste";1731;"Moyenne";5,55769601232903
+2;"2013";"établissement public d'éducation secondaire";1486;"Moyenne";4,7710781480768
 2;"2013";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements exclusivement publics)";347;"Moyenne";1,08308883201199
+des établissements exclusivement publics)";347;"Moyenne";1,11410775059398
 2;"2013";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements publics ou privés)";194;"Moyenne";0,605530932018228
+des établissements publics ou privés)";194;"Moyenne";0,622872921081359
 2;"2013";"service postal de remplacement
-des bureaux de poste";1246;"Moyenne";3,88913165615831
+des bureaux de poste";1246;"Moyenne";4,00051370962563
 2;"2013";"service de l'emploi avec
-conseiller spécialisé";258;"Moyenne";0,805293713714963
-2;"2013";"service de l'emploi sans
-conseiller spécialisé";182;"Moyenne";0,56807541045009
-2;"2013";"direction des finances publiques";1326;"Moyenne";4,13883513327923
-2;"2018";"police et gendarmerie nationales";590;"Moyenne";1,88860435339309
+conseiller spécialisé";258;"Moyenne";0,828356771335003
+2;"2013";"direction des finances publiques";1326;"Moyenne";4,25736852244269
+2;"2018";"police et gendarmerie nationales";590;"Moyenne";1,91851201508796
 2;"2018";"équipements juridictionnels
-d'ordre judiciaire";389;"Moyenne";1,24519846350832
-2;"2018";"établissement public ou privé de santé";643;"Moyenne";2,05825864276569
-2;"2018";"bureau de poste";1481;"Moyenne";4,74071702944942
-2;"2018";"établissement public d'éducation secondaire";1452;"Moyenne";4,64788732394366
+d'ordre judiciaire";389;"Moyenne";1,26491724384613
+2;"2018";"établissement public ou privé de santé";643;"Moyenne";2,09085292491789
+2;"2018";"bureau de poste";1481;"Moyenne";4,81579032939876
+2;"2018";"établissement public d'éducation secondaire";1452;"Moyenne";4,72149058628426
 2;"2018";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements exclusivement publics)";340;"Moyenne";1,08834827144686
+des établissements exclusivement publics)";340;"Moyenne";1,10558319513543
 2;"2018";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements publics ou privés)";199;"Moyenne";0,637003841229193
+des établissements publics ou privés)";199;"Moyenne";0,64709134068221
 2;"2018";"service postal de remplacement
-des bureaux de poste";1578;"Moyenne";5,05121638924456
+des bureaux de poste";1578;"Moyenne";5,13120671154034
 2;"2018";"service de l'emploi avec
-conseiller spécialisé";233;"Moyenne";0,74583866837388
-2;"2018";"service de l'emploi sans
-conseiller spécialisé";112;"Moyenne";0,358514724711908
-2;"2018";"direction des finances publiques";1285;"Moyenne";4,11331626120359
-3;"2013";"police et gendarmerie nationales";623;"Petite";1,94456582807916
+conseiller spécialisé";233;"Moyenne";0,757649660195753
+2;"2018";"direction des finances publiques";1285;"Moyenne";4,17845413455598
+3;"2013";"police et gendarmerie nationales";623;"Petite";2,00025685481282
 3;"2013";"équipements juridictionnels
-d'ordre judiciaire";77;"Petite";0,240339596728884
-3;"2013";"établissement public ou privé de santé";584;"Petite";1,82283538298271
-3;"2013";"bureau de poste";904;"Petite";2,82164929146638
-3;"2013";"établissement public d'éducation secondaire";1150;"Petite";3,58948748361321
+d'ordre judiciaire";77;"Petite";0,247222757336416
+3;"2013";"établissement public ou privé de santé";584;"Petite";1,8750401335645
+3;"2013";"bureau de poste";904;"Petite";2,90245938483272
+3;"2013";"établissement public d'éducation secondaire";1150;"Petite";3,69228793424517
 3;"2013";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements exclusivement publics)";28;"Petite";0,0873962169923216
+des établissements exclusivement publics)";28;"Petite";0,0898991844859693
 3;"2013";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements publics ou privés)";104;"Petite";0,324614520257195
+des établissements publics ou privés)";104;"Petite";0,333911256662172
 3;"2013";"service postal de remplacement
-des bureaux de poste";477;"Petite";1,48885698233348
+des bureaux de poste";477;"Petite";1,53149682142169
 3;"2013";"service de l'emploi avec
-conseiller spécialisé";244;"Petite";0,761595605218803
-3;"2013";"service de l'emploi sans
-conseiller spécialisé";197;"Petite";0,614894812410263
-3;"2013";"direction des finances publiques";940;"Petite";2,9340158561708
-3;"2018";"police et gendarmerie nationales";616;"Petite";1,97183098591549
+conseiller spécialisé";244;"Petite";0,783407179092018
+3;"2013";"direction des finances publiques";940;"Petite";3,0180440506004
+3;"2018";"police et gendarmerie nationales";616;"Petite";2,00305661236302
 3;"2018";"équipements juridictionnels
-d'ordre judiciaire";80;"Petite";0,256081946222791
-3;"2018";"établissement public ou privé de santé";572;"Petite";1,83098591549296
-3;"2018";"bureau de poste";805;"Petite";2,57682458386684
-3;"2018";"établissement public d'éducation secondaire";1119;"Petite";3,58194622279129
+d'ordre judiciaire";80;"Petite";0,260137222384808
+3;"2018";"établissement public ou privé de santé";572;"Petite";1,85998114005138
+3;"2018";"bureau de poste";805;"Petite";2,61763080024713
+3;"2018";"établissement public d'éducation secondaire";1119;"Petite";3,6386693981075
 3;"2018";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements exclusivement publics)";26;"Petite";0,0832266325224072
+des établissements exclusivement publics)";26;"Petite";0,0845445972750626
 3;"2018";"établissement public d'éducation supérieure
 (filières de formation dans
-des établissements publics ou privés)";106;"Petite";0,339308578745198
+des établissements publics ou privés)";106;"Petite";0,344681819659871
 3;"2018";"service postal de remplacement
-des bureaux de poste";642;"Petite";2,0550576184379
+des bureaux de poste";642;"Petite";2,08760120963808
 3;"2018";"service de l'emploi avec
-conseiller spécialisé";253;"Petite";0,809859154929577
-3;"2018";"service de l'emploi sans
-conseiller spécialisé";148;"Petite";0,473751600512164
-3;"2018";"direction des finances publiques";868;"Petite";2,77848911651729
+conseiller spécialisé";253;"Petite";0,822683965791955
+3;"2018";"direction des finances publiques";868;"Petite";2,82248886287517

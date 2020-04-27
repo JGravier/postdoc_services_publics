@@ -342,7 +342,6 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
          `service de l'emploi avec conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec conseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement des bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement des bureaux de poste`, annee = annee),
-         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee),
          `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
@@ -457,8 +456,7 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_communes_au %>%
             by = c("depcom" = "INSEE_COM"))
 
 # extraire les géométries en un WKT en character que l'on adjoint ensuite au dataframe
-geometry_2 <- lwgeom::st_astext(sf_ensemble_thes_fonctionnel_wide$geom) # beaucoup plus rapide comme fonction
-# voir le benchmark : https://github.com/r-spatial/sf/pull/800
+geometry_2 <- lwgeom::st_astext(sf_ensemble_thes_fonctionnel_wide$geom)
 
 sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
   select(-geom, -LIBGEO) %>% # on vire la géométrie et le nom (déjà présent)
@@ -479,7 +477,6 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
          `service de l'emploi avec conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec conseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement des bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement des bureaux de poste`, annee = annee),
-         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee),
          `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
@@ -583,7 +580,6 @@ sf_ensemble_thes_fonctionnel_wide <- sf_ensemble_thes_fonctionnel_wide %>%
          `service de l'emploi avec conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi avec conseiller spécialisé`, annee = annee),
          `direction des finances publiques` = na_en_zero_2013_a_2018(x = `direction des finances publiques`, annee = annee),
          `service postal de remplacement des bureaux de poste` = na_en_zero_2013_a_2018(x = `service postal de remplacement des bureaux de poste`, annee = annee),
-         `service de l'emploi sans conseiller spécialisé` = na_en_zero_2013_a_2018(x = `service de l'emploi sans conseiller spécialisé`, annee = annee),
          `établissement public ou privé de santé` = na_en_zero_2009_a_2018(x = `établissement public ou privé de santé`, annee = annee))
 
 
