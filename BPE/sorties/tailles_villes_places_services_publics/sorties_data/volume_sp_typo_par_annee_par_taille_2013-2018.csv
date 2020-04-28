@@ -1,0 +1,103 @@
+"rowid";"annee";"typologie";"nombre_total";"taille";"pourc_par_an"
+1;"2013";"police et gendarmerie nationales";1299;"Grande";7,31830985915493
+1;"2013";"équipements juridictionnels
+d'ordre judiciaire";346;"Grande";1,94929577464789
+1;"2013";"établissement public ou privé de santé";1304;"Grande";7,34647887323944
+1;"2013";"bureau de poste";4218;"Grande";23,7633802816901
+1;"2013";"établissement public d'éducation secondaire";4012;"Grande";22,6028169014085
+1;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";1231;"Grande";6,93521126760563
+1;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";655;"Grande";3,69014084507042
+1;"2013";"service postal de remplacement
+des bureaux de poste";1533;"Grande";8,63661971830986
+1;"2013";"service de l'emploi avec
+conseiller spécialisé";603;"Grande";3,39718309859155
+1;"2013";"direction des finances publiques";2549;"Grande";14,3605633802817
+1;"2018";"police et gendarmerie nationales";1240;"Grande";7,09544518196384
+1;"2018";"équipements juridictionnels
+d'ordre judiciaire";350;"Grande";2,00274662394141
+1;"2018";"établissement public ou privé de santé";1223;"Grande";6,9981689173724
+1;"2018";"bureau de poste";3724;"Grande";21,3092240787366
+1;"2018";"établissement public d'éducation secondaire";4007;"Grande";22,9285877775235
+1;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";1179;"Grande";6,74639505607691
+1;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";665;"Grande";3,80521858548867
+1;"2018";"service postal de remplacement
+des bureaux de poste";2157;"Grande";12,3426413366903
+1;"2018";"service de l'emploi avec
+conseiller spécialisé";525;"Grande";3,00411993591211
+1;"2018";"direction des finances publiques";2406;"Grande";13,7674525062943
+2;"2013";"police et gendarmerie nationales";612;"Moyenne";7,40471869328494
+2;"2013";"équipements juridictionnels
+d'ordre judiciaire";381;"Moyenne";4,60980036297641
+2;"2013";"établissement public ou privé de santé";684;"Moyenne";8,27586206896552
+2;"2013";"bureau de poste";1731;"Moyenne";20,9437386569873
+2;"2013";"établissement public d'éducation secondaire";1486;"Moyenne";17,9794313369631
+2;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";347;"Moyenne";4,19842710223835
+2;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";194;"Moyenne";2,34724742891712
+2;"2013";"service postal de remplacement
+des bureaux de poste";1246;"Moyenne";15,0756200846945
+2;"2013";"service de l'emploi avec
+conseiller spécialisé";258;"Moyenne";3,12159709618875
+2;"2013";"direction des finances publiques";1326;"Moyenne";16,043557168784
+2;"2018";"police et gendarmerie nationales";590;"Moyenne";7,2039072039072
+2;"2018";"équipements juridictionnels
+d'ordre judiciaire";389;"Moyenne";4,74969474969475
+2;"2018";"établissement public ou privé de santé";643;"Moyenne";7,85103785103785
+2;"2018";"bureau de poste";1481;"Moyenne";18,0830280830281
+2;"2018";"établissement public d'éducation secondaire";1452;"Moyenne";17,7289377289377
+2;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";340;"Moyenne";4,15140415140415
+2;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";199;"Moyenne";2,42979242979243
+2;"2018";"service postal de remplacement
+des bureaux de poste";1578;"Moyenne";19,2673992673993
+2;"2018";"service de l'emploi avec
+conseiller spécialisé";233;"Moyenne";2,84493284493285
+2;"2018";"direction des finances publiques";1285;"Moyenne";15,6898656898657
+3;"2013";"police et gendarmerie nationales";623;"Petite";12,1418826739427
+3;"2013";"équipements juridictionnels
+d'ordre judiciaire";77;"Petite";1,50068212824011
+3;"2013";"établissement public ou privé de santé";584;"Petite";11,3817969206782
+3;"2013";"bureau de poste";904;"Petite";17,6183979731047
+3;"2013";"établissement public d'éducation secondaire";1150;"Petite";22,4127850321575
+3;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";28;"Petite";0,545702592087312
+3;"2013";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";104;"Petite";2,02689534203859
+3;"2013";"service postal de remplacement
+des bureaux de poste";477;"Petite";9,29643344377314
+3;"2013";"service de l'emploi avec
+conseiller spécialisé";244;"Petite";4,75540830247515
+3;"2013";"direction des finances publiques";940;"Petite";18,3200155915026
+3;"2018";"police et gendarmerie nationales";616;"Petite";12,1092982111264
+3;"2018";"équipements juridictionnels
+d'ordre judiciaire";80;"Petite";1,57263613131512
+3;"2018";"établissement public ou privé de santé";572;"Petite";11,2443483389031
+3;"2018";"bureau de poste";805;"Petite";15,8246510713584
+3;"2018";"établissement public d'éducation secondaire";1119;"Petite";21,9972478867702
+3;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements exclusivement publics)";26;"Petite";0,511106742677413
+3;"2018";"établissement public d'éducation supérieure
+(filières de formation dans
+des établissements publics ou privés)";106;"Petite";2,08374287399253
+3;"2018";"service postal de remplacement
+des bureaux de poste";642;"Petite";12,6204049538038
+3;"2018";"service de l'emploi avec
+conseiller spécialisé";253;"Petite";4,97346176528406
+3;"2018";"direction des finances publiques";868;"Petite";17,063102024769
