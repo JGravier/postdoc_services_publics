@@ -2,6 +2,7 @@ library(tidyverse)
 library(ggthemes)
 library(sf)
 library(classInt)
+library(patchwork)
 
 source("fonctions_bases.R")
 
@@ -503,14 +504,13 @@ evolution2009_2018_densite %>%
 write.csv(evolution2009_2018_densite, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_sp_densite_equip_2009-2018.csv", row.names = FALSE)
 
 # ---------------------- TCAM nb equipements RGPP -------------------------------
-# il est nécessaire de virer la poste pour voir ce que cela donne (qui a énormément évoluée à la baisse)
+# Globalement, sans distinction des tailles des villes
 # transformation du tableau long en tableau wide pour calculer les TCAM:
 sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
-  filter(ID %ni% c("2", "3", "4", "5", "6")) %>% # on supprime les équipements non connus en 2009
-  # "2" : les bureaux de Poste ; à garder ou à virer selon l'analyse
-  select(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee, nb_equip) %>%
-  group_by(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee) %>%
-  summarise_if(is.numeric, sum) %>%
+  filter(validite_temporelle == "2009-2013-2018") %>% # osélection équipements connus en 2009
+  select(AU2010, geometry, tailles_2016, RGPP, annee, nb_equip) %>%
+  group_by(AU2010, geometry, RGPP, annee) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
   ungroup() %>%
   mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
   select(-annee) %>%
@@ -523,22 +523,11 @@ sf_sp_au_wide_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
   mutate(`oui 2009-2013` = TCAM(datefin = `2013_oui`, datedebut = `2009_oui`, nbannee = 4)) %>%
   mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5))
 
-
-# ----------------> analyse des sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP[,11:14]
 evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
-  select(AU2010:tailles_2016) %>%
-  bind_cols(evolution2009_2018_nb_RGPP)
-
-evolution2009_2018_nb_RGPP <- evolution2009_2018_nb_RGPP %>%
+  select(-`2009_non`:-`2018_oui`) %>%
   pivot_longer(cols = `non 2009-2013`:`oui 2013-2018`,
                names_to = "RGPP", values_to = "TCAM") %>%
-  mutate(annees = str_extract_all(string = RGPP, pattern = "2009-2013", simplify = TRUE)) %>% # évite le NA ici pour ligne suivante
-  mutate(annees = if_else(annees != "2009-2013", "2013-2018", "2009-2013")) %>%
-  mutate(RGPP = str_remove_all(string = RGPP, pattern = "2009-2013")) %>%
-  mutate(RGPP = str_remove_all(string = RGPP, pattern = "2013-2018"))
-
-evolution2009_2018_nb_RGPP %>% filter(TCAM == "NaN") # ceux avec en début et en fin de période 0 équipement
+  separate(col = "RGPP", into = c("RGPP", "annees"), sep = " ")
 
 evolution2009_2018_nb_RGPP %>%
   ggplot() +
@@ -548,52 +537,78 @@ evolution2009_2018_nb_RGPP %>%
   theme_julie() +
   theme(axis.title.y=element_blank(),
         axis.text.y=element_blank()) +
-  ylab("taux de croissance annuel moyen du nombre de services") +
-  facet_grid(annees ~ tailles_2016) +
+  ylab("Taux de croissance annuel moyen du nombre de services") +
+  facet_wrap(~annees) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
-       subtitle = "Services publics des aires urbaines en France métropolitaine (hors Poste)")
+       subtitle = "Aires urbaines en France métropolitaine")
 
-write.csv(evolution2009_2018_nb_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_equip_2009-2018_hors_Poste.csv", row.names = FALSE)
+ggsave(filename = "RGPP_evo_nb_equipement_pas_tailles_villes_pas_jitter.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 18, height = 15, units = "cm")
 
-
-# ---------------------- TCAM densité RGPP -------------------------------
-# transformation du tableau long en tableau wide pour calculer les TCAM:
-sf_sp_au_wide_densite_RGPP <- sf_services_publics_aires_urbaines %>%
-  filter(ID %ni% c("2", "3", "4", "5", "6")) %>% # on supprime les équipements non connus en 2009
-  # "2" : les bureaux de Poste ; à garder ou à virer selon l'analyse
-  select(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee, densite_equip) %>%
-  group_by(AU2010, LIBAU2010, geometry, tailles_2016, RGPP, annee) %>%
-  summarise_if(is.numeric, sum) %>%
+### Tableau global par taille de villes
+sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  select(tailles_2016, RGPP, annee, nb_equip) %>%
+  group_by(tailles_2016, RGPP, annee) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
   ungroup() %>%
   mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
   select(-annee) %>%
-  pivot_wider(names_from = RGPP, values_from = densite_equip)
+  pivot_wider(names_from = RGPP, values_from = nb_equip) %>%
+  mutate(`non 2009-2013` = TCAM(datefin = `2013_non`, datedebut = `2009_non`, nbannee = 4)) %>%
+  mutate(`non 2013-2018` = TCAM(datefin = `2018_non`, datedebut = `2013_non`, nbannee = 5)) %>%
+  mutate(`oui 2009-2013` = TCAM(datefin = `2013_oui`, datedebut = `2009_oui`, nbannee = 4)) %>%
+  mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5)) %>%
+  select(-`2009_non`:-`2018_oui`)
+
+write.csv2(sf_sp_au_wide_densite_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_service_global_taille_villes.csv", row.names = FALSE)
+
+# Hors bureaux de poste
+sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  filter(ID != "2") %>%
+  select(tailles_2016, RGPP, annee, nb_equip) %>%
+  group_by(tailles_2016, RGPP, annee) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  ungroup() %>%
+  mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
+  select(-annee) %>%
+  pivot_wider(names_from = RGPP, values_from = nb_equip) %>%
+  mutate(`non 2009-2013` = TCAM(datefin = `2013_non`, datedebut = `2009_non`, nbannee = 4)) %>%
+  mutate(`non 2013-2018` = TCAM(datefin = `2018_non`, datedebut = `2013_non`, nbannee = 5)) %>%
+  mutate(`oui 2009-2013` = TCAM(datefin = `2013_oui`, datedebut = `2009_oui`, nbannee = 4)) %>%
+  mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5)) %>%
+  select(-`2009_non`:-`2018_oui`)
+
+write.csv2(sf_sp_au_wide_densite_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_service__global_taille_villes_hors_poste.csv", row.names = FALSE)
+
+
+# En considérant la taille des villes
+sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>% # osélection équipements connus en 2009
+  select(AU2010, geometry, tailles_2016, RGPP, annee, nb_equip) %>%
+  group_by(AU2010, geometry, tailles_2016, RGPP, annee) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  ungroup() %>%
+  mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
+  select(-annee) %>%
+  pivot_wider(names_from = RGPP, values_from = nb_equip)
 
 # calcul TCAM
-sf_sp_au_wide_densite_RGPP <- sf_sp_au_wide_densite_RGPP %>%
+sf_sp_au_wide_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
   mutate(`non 2009-2013` = TCAM(datefin = `2013_non`, datedebut = `2009_non`, nbannee = 4)) %>%
   mutate(`non 2013-2018` = TCAM(datefin = `2018_non`, datedebut = `2013_non`, nbannee = 5)) %>%
   mutate(`oui 2009-2013` = TCAM(datefin = `2013_oui`, datedebut = `2009_oui`, nbannee = 4)) %>%
   mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5))
 
-
-# ----------------> analyse des sp étudiables sur toute la durée de l'étude : 2009-2018
-evolution2009_2018_densite_RGPP <- sf_sp_au_wide_densite_RGPP[,11:14]
-evolution2009_2018_densite_RGPP <- sf_sp_au_wide_densite_RGPP %>%
-  select(AU2010:tailles_2016) %>%
-  bind_cols(evolution2009_2018_densite_RGPP)
-
-evolution2009_2018_densite_RGPP <- evolution2009_2018_densite_RGPP %>%
+evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
+  select(-`2009_non`:-`2018_oui`) %>%
   pivot_longer(cols = `non 2009-2013`:`oui 2013-2018`,
                names_to = "RGPP", values_to = "TCAM") %>%
-  mutate(annees = str_extract_all(string = RGPP, pattern = "2009-2013", simplify = TRUE)) %>% # évite le NA ici pour ligne suivante
-  mutate(annees = if_else(annees != "2009-2013", "2013-2018", "2009-2013")) %>%
-  mutate(RGPP = str_remove_all(string = RGPP, pattern = "2009-2013")) %>%
-  mutate(RGPP = str_remove_all(string = RGPP, pattern = "2013-2018"))
+  separate(col = "RGPP", into = c("RGPP", "annees"), sep = " ")
 
-evolution2009_2018_densite_RGPP %>% filter(TCAM == "NaN") # ceux avec en début et en fin de période 0 équipement
-
-evolution2009_2018_densite_RGPP %>%
+evolution2009_2018_nb_RGPP %>%
   ggplot() +
   geom_violin(aes(x = RGPP, y = TCAM, fill = RGPP)) +
   scale_fill_manual(values = c("#00a2b3", "#cf3e53"), name = "Services visés par la RGPP") +
@@ -601,12 +616,184 @@ evolution2009_2018_densite_RGPP %>%
   theme_julie() +
   theme(axis.title.y=element_blank(),
         axis.text.y=element_blank()) +
-  ylab("taux de croissance annuel moyen de la densité de services pour 10.000 hab.") +
+  ylab("Taux de croissance annuel moyen du nombre de services") +
   facet_grid(annees ~ tailles_2016) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
-       subtitle = "Services publics des aires urbaines en France métropolitaine (hors Poste)")
+       subtitle = "Aires urbaines en France métropolitaine")
 
-write.csv(evolution2009_2018_densite_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_densite_equip_2009-2018_hors_Poste.csv", row.names = FALSE)
+write.csv(evolution2009_2018_nb_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_equip_2009-2018_hors_Poste.csv", row.names = FALSE)
+
+ggsave(filename = "RGPP_evo_nb_equipement.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 22, height = 17, units = "cm")
+
+
+# --> en enlevant de l'analyse la Poste (question de niveau de service)
+sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>% # sélection équipements connus en 2009
+  filter(typologie != "bureau de poste") %>%
+  select(AU2010, geometry, tailles_2016, RGPP, annee, nb_equip) %>%
+  group_by(AU2010, geometry, tailles_2016, RGPP, annee) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  ungroup() %>%
+  mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
+  select(-annee) %>%
+  pivot_wider(names_from = RGPP, values_from = nb_equip)
+
+# calcul TCAM
+sf_sp_au_wide_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
+  mutate(`non 2009-2013` = TCAM(datefin = `2013_non`, datedebut = `2009_non`, nbannee = 4)) %>%
+  mutate(`non 2013-2018` = TCAM(datefin = `2018_non`, datedebut = `2013_non`, nbannee = 5)) %>%
+  mutate(`oui 2009-2013` = TCAM(datefin = `2013_oui`, datedebut = `2009_oui`, nbannee = 4)) %>%
+  mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5))
+
+evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
+  select(-`2009_non`:-`2018_oui`) %>%
+  pivot_longer(cols = `non 2009-2013`:`oui 2013-2018`,
+               names_to = "RGPP", values_to = "TCAM") %>%
+  separate(col = "RGPP", into = c("RGPP", "annees"), sep = " ")
+
+evolution2009_2018_nb_RGPP %>%
+  ggplot() +
+  geom_violin(aes(x = RGPP, y = TCAM, fill = RGPP)) +
+  scale_fill_manual(values = c("#00a2b3", "#cf3e53"), name = "Services visés par la RGPP") +
+  coord_flip() +
+  theme_julie() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("Taux de croissance annuel moyen du nombre de services") +
+  facet_grid(annees ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Aires urbaines en France métropolitaine (hors bureau de poste)")
+
+ggsave(filename = "RGPP_evo_nb_equipement_hors_poste.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 22, height = 17, units = "cm")
+
+# ---------- Quelles sont les villes qui ont été fortement visée par la RGPP ? -----------
+# Sont-elles les mêmes qui ont des diminutions de service hors RGPP ?
+sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>% # osélection équipements connus en 2009
+  select(AU2010, geometry, tailles_2016, RGPP, annee, nb_equip) %>%
+  group_by(AU2010, geometry, RGPP, annee) %>%
+  summarise_if(is.numeric, sum, na.rm = TRUE) %>%
+  ungroup() %>%
+  mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
+  select(-annee) %>%
+  pivot_wider(names_from = RGPP, values_from = nb_equip) %>%
+  mutate(`non 2009-2013` = TCAM(datefin = `2013_non`, datedebut = `2009_non`, nbannee = 4)) %>%
+  mutate(`non 2013-2018` = TCAM(datefin = `2018_non`, datedebut = `2013_non`, nbannee = 5)) %>%
+  mutate(`oui 2009-2013` = TCAM(datefin = `2013_oui`, datedebut = `2009_oui`, nbannee = 4)) %>%
+  mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5)) %>%
+  select(-`2009_non`:-`2018_oui`) %>%
+  pivot_longer(cols = `non 2009-2013`:`oui 2013-2018`,
+               names_to = "RGPP", values_to = "TCAM") %>%
+  separate(col = "RGPP", into = c("RGPP", "annees"), sep = " ")
+
+# sur la période 2009-2013 uniquement d'abord :
+evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
+  filter(annees == "2009-2013") %>%
+  filter(!is.na(TCAM)) %>%
+  filter(TCAM < 0) %>%
+  st_as_sf(wkt = "geometry", crs = 2154)
+
+# Cartographie : évolution globale 2009-2018
+classes <- classIntervals(var = evolution2009_2018_nb_RGPP$TCAM, n = 6, style = "quantile") # discrétisation de Jenks
+classes$brks
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = evolution2009_2018_nb_RGPP %>% select(AU2010) %>% unique(), fill = "grey80", color = "grey70", size = 0.3) +
+  geom_sf(data = evolution2009_2018_nb_RGPP, 
+          aes(fill = cut(TCAM, classes$brks, include.lowest = TRUE)), show.legend = TRUE, size = 0.3) +
+  scale_fill_brewer(palette = "YlGnBu", name = "Taux de croissance\nannuel moyen du\nnombre de services\n(2009-2013)", direction = -1) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title = element_text(size = 11)) +
+  labs(subtitle = "... visés ou non par la RGPP",
+    caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Villes avec diminution de services publics...") +
+  facet_wrap(~fct_rev(RGPP))
+
+ggsave(filename = "cartographie_2009-2013_TCAM_nb_sp_RGPP.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 30, height = 30, units = "cm")
+
+
+### sur les deux périodes, visés par la RGPP
+evolution2009_2018_nb_RGPP <- sf_sp_au_wide_nb_RGPP %>%
+  filter(RGPP == "oui") %>%
+  filter(!is.na(TCAM)) %>%
+  filter(TCAM < 0) %>%
+  st_as_sf(wkt = "geometry", crs = 2154)
+
+# Cartographie : évolution globale 2009-2018
+classes <- classIntervals(var = evolution2009_2018_nb_RGPP$TCAM, n = 6, style = "quantile") # discrétisation de Jenks
+classes$brks
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = evolution2009_2018_nb_RGPP %>% select(AU2010) %>% unique(), fill = "grey80", color = "grey70", size = 0.3) +
+  geom_sf(data = evolution2009_2018_nb_RGPP, 
+          aes(fill = cut(TCAM, classes$brks, include.lowest = TRUE)), show.legend = TRUE, size = 0.3) +
+  scale_fill_brewer(palette = "YlGnBu", name = "Taux de croissance\nannuel moyen du\nnombre de services\n(2013-2018)", direction = -1) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        legend.title = element_text(size = 11)) +
+  labs(subtitle = "... au fil du temps",
+       caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Villes avec diminution de services publics visés par la RGPP...") +
+  facet_wrap(~annees)
+
+ggsave(filename = "cartographie_TCAM_nb_sp_RGPP.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 30, height = 30, units = "cm")
+
+
+# ---------------------- TCAM densité RGPP -------------------------------
+# Par taille de villes et par ville
+sf_sp_au_wide_densite_RGPP <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  select(AU2010, geometry, tailles_2016, RGPP, annee, densite_equip) %>%
+  group_by(AU2010, geometry, tailles_2016, RGPP, annee) %>%
+  summarise_if(is.numeric, sum) %>%
+  ungroup() %>%
+  mutate(RGPP = str_c(annee, RGPP, sep = "_")) %>%
+  select(-annee) %>%
+  pivot_wider(names_from = RGPP, values_from = densite_equip) %>%
+  mutate(`non 2009-2013` = TCAM(datefin = `2013_non`, datedebut = `2009_non`, nbannee = 4)) %>%
+  mutate(`non 2013-2018` = TCAM(datefin = `2018_non`, datedebut = `2013_non`, nbannee = 5)) %>%
+  mutate(`oui 2009-2013` = TCAM(datefin = `2013_oui`, datedebut = `2009_oui`, nbannee = 4)) %>%
+  mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5)) %>%
+  pivot_longer(cols = `non 2009-2013`:`oui 2013-2018`,
+               names_to = "RGPP", values_to = "TCAM") %>%
+  separate(col = RGPP, into = c("RGPP", "annees"), sep = " ")
+
+sf_sp_au_wide_densite_RGPP %>%
+  ggplot() +
+  geom_violin(aes(x = RGPP, y = TCAM, fill = RGPP)) +
+  scale_fill_manual(values = c("#00a2b3", "#cf3e53"), name = "Services visés par la RGPP") +
+  coord_flip() +
+  theme_julie() +
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank()) +
+  ylab("Taux de croissance annuel moyen de la densité de services pour 10.000 hab.") +
+  facet_grid(annees ~ tailles_2016) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Aires urbaines en France métropolitaine")
+
+write.csv(sf_sp_au_wide_densite_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_densite_equip_2009-2018.csv", row.names = FALSE)
+
 
 
 # ---------------------------- evo population -------------------------------------------------------
@@ -694,9 +881,10 @@ write.csv2(volume_sp_typo_par_annee_validite_2009_2018,
 
 # visualisation
 volume_sp_typo_par_annee_validite_2009_2018 %>%
-  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee)) +
+  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee, label = nombre_total)) +
   geom_bar(stat = "identity", position = "dodge") +
   scale_fill_tableau(palette = "Classic 10") +
+  geom_text(position = position_dodge(width = 1), size = 2.5, hjust = -0.05, color = "grey40") +
   theme_julie() +
   theme(axis.title.y = element_blank()) +
   xlab("Part du service dans l'ensemble des services par an") +
@@ -830,12 +1018,13 @@ write.csv2(volume_sp_typo_par_annee_par_taille_validite_2009_2018,
 
 # visualisation
 volume_sp_typo_par_annee_par_taille_validite_2009_2018 %>%
-  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee)) +
+  ggplot(aes(x = pourc_par_an, y = typologie, fill = annee, label = nombre_total)) +
   geom_bar(stat = "identity", position = "dodge") +
   scale_fill_tableau(palette = "Classic 10") +
+  geom_text(position = position_dodge(width = 1), size = 2.5, hjust = -0.09, color = "grey60") +
   theme_julie() +
   theme(axis.title.y = element_blank()) +
-  xlab("Part du service dans l'ensemble des services (par an et par taille)") +
+  scale_x_continuous(limits = c(0,38), name = "Part du service dans l'ensemble des services (par an et par taille)") +
   facet_wrap(~taille) +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
        subtitle = "Taille de villes")
@@ -877,6 +1066,8 @@ ggsave(filename = "part_services_validite_2013-2018_par_taille.png", plot = last
        path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.3.part_service_dans_sp", device = "png",
        width = 30, height = 26, units = "cm")
 
+rm(volume_sp_typo_par_annee_par_taille_validite_2009_2018, volume_sp_typo_par_annee_par_taille_validite_2013_2018,
+   volume_sp_typo_par_annee_validite_2009_2018, volume_sp_typo_par_annee_validite_2013_2018)
 
 # ---------------------- TCAM nb d'équipements tous services confondus -------------------------------
 # transformation du tableau long en tableau wide pour calculer les TCAM :
@@ -1040,3 +1231,153 @@ ggsave(filename = "evo_sp_tailles_villes_2013-2018.png", plot = last_plot(),
        width = 25, height = 25, units = "cm")
 
 rm(tab_2013_2018_tcam_services)
+
+
+# ---------- Géographie générale des TCAM tous services confondus --------------
+# période 2009-2018
+geo_au_sf_evo_globale <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>% # on sélectionne les services de ces années là
+  group_by(AU2010, geometry, annee, tailles_2016) %>% # groupes utiles pour la suite
+  summarise(sum(nb_equip)) %>%
+  rename(nb_equip = `sum(nb_equip)`) %>%
+  pivot_wider(id_cols = c("AU2010", "geometry", "tailles_2016"), names_from = annee, values_from = nb_equip) %>%
+  ungroup() %>%
+  mutate(`2009` = if_else(is.na(`2009`), 0, as.double(`2009`)),
+         `2013` = if_else(is.na(`2013`), 0, as.double(`2013`)),
+         `2018` = if_else(is.na(`2018`), 0, as.double(`2018`))) %>%
+  mutate(evo_2009_2018 = TCAM(datefin = `2018`, datedebut = `2009`, nbannee = 9),
+         evo_2009_2013 = TCAM(datefin = `2013`, datedebut = `2009`, nbannee = 4),
+         evo_2013_2018 = TCAM(datefin = `2018`, datedebut = `2013`, nbannee = 5)) %>%
+  mutate(evo_2009_2018 = if_else(evo_2009_2018 != "Inf", as.double(evo_2009_2018), 100), # attention : spécificité ici
+         evo_2009_2013 = if_else(evo_2009_2013 != "Inf", as.double(evo_2009_2013), 100),
+         evo_2013_2018 = if_else(evo_2013_2018 != "Inf", as.double(evo_2013_2018), 100)) %>%
+  st_as_sf(wkt = "geometry", crs = 2154)
+
+
+# Cartographie : évolution globale 2009-2018
+classes <- classIntervals(var = geo_au_sf_evo_globale$evo_2009_2018, n = 6, style = "quantile") # discrétisation de Jenks
+classes$brks
+classes$brks[6] <- 3
+
+ma_palette <- c("#4575b4", "#74add1", "#abd9e9", "#e0f3f8", "#fdae61", "#d73027")
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = geo_au_sf_evo_globale %>% select(AU2010) %>% unique(), fill = "grey80", color = "grey70", size = 0.3) +
+  geom_sf(data = geo_au_sf_evo_globale, 
+          aes(fill = cut(evo_2009_2018, classes$brks, include.lowest = TRUE)), show.legend = TRUE, size = 0.3) +
+  scale_fill_manual(name = "Taux de croissance\nannuel moyen", values = ma_palette) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Évolution du nombre de services publics entre 2009 et 2018")
+
+ggsave(filename = "cartographie_2009-2018_TCAM_nb_sp.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 25, height = 25, units = "cm")
+
+# en virant les valeurs extrêmes :
+# car il n'y a qu'une ville en +100% et une ville en -100%
+classes <- geo_au_sf_evo_globale %>%
+  filter(evo_2009_2018 %ni% c(-100, 100))
+
+classes <- classIntervals(var = classes$evo_2009_2018, n = 6, style = "quantile")
+classes$brks
+classes$brks[6] <- 3
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = geo_au_sf_evo_globale %>% select(AU2010) %>% unique(), fill = "grey80", color = "grey80", size = 0.3) +
+  geom_sf(data = geo_au_sf_evo_globale %>% filter(evo_2009_2018 %ni% c(-100, 100)), 
+          aes(fill = cut(evo_2009_2018, classes$brks, include.lowest = TRUE)), show.legend = TRUE, size = 0.3) +
+  scale_fill_manual(name = "Taux de croissance\nannuel moyen", values = ma_palette) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Évolution du nombre de services publics entre 2009 et 2018")
+
+ggsave(filename = "cartographie_2009-2018_TCAM_nb_sp_hors_extremes.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 25, height = 25, units = "cm")
+
+
+# Cartographie : évolution sur les périodes 2009-2013 et 2013-2018
+geo_au_sf_evo_globale_2 <- geo_au_sf_evo_globale %>%
+  rename(`2009-2013` = evo_2009_2013,
+         `2013-2018` = evo_2013_2018) %>%
+  pivot_longer(cols = `2009-2013`:`2013-2018`, names_to = "periodes", values_to = "tcam") %>%
+  st_as_sf(crs = 2154)
+
+classes <- classIntervals(var = geo_au_sf_evo_globale_2$tcam, n = 5, style = "quantile")
+classes$brks
+classes$brks[5] <- 3
+
+ma_palette <- c("#4575b4", "#74add1", "#abd9e9", "#fdae61", "#d73027")
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = geo_au_sf_evo_globale %>% select(AU2010) %>% unique(), fill = "grey80", color = "grey70", size= 0.3) +
+  geom_sf(data = geo_au_sf_evo_globale_2, 
+          aes(fill = cut(tcam, classes$brks, include.lowest = TRUE)), show.legend = TRUE, size= 0.3) +
+  scale_fill_manual(name = "Taux de croissance\nannuel moyen", values = ma_palette) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Évolution du nombre de services publics entre 2009 et 2018") +
+  facet_wrap(~periodes)
+
+ggsave(filename = "cartographie_2009-2013_2013-2018_TCAM_nb_sp.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 30, height = 25, units = "cm")
+
+# en virant les valeurs extrêmes :
+# car il n'y a qu'une ville en +100% et une ville en -100%
+geo_au_sf_evo_globale_2 <- geo_au_sf_evo_globale %>%
+  rename(`2009-2013` = evo_2009_2013,
+         `2013-2018` = evo_2013_2018) %>%
+  pivot_longer(cols = `2009-2013`:`2013-2018`, names_to = "periodes", values_to = "tcam") %>%
+  filter(tcam %ni% c(-100, 100)) %>%
+  st_as_sf(crs = 2154)
+
+classes <- classIntervals(var = geo_au_sf_evo_globale_2$tcam, n = 5, style = "quantile")
+classes$brks
+classes$brks[5] <- 3
+
+ma_palette <- c("#4575b4", "#74add1", "#abd9e9", "#fdae61", "#d73027")
+
+ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50") +
+  geom_sf(data = geo_au_sf_evo_globale %>% select(AU2010) %>% unique(), fill = "grey80", color = "grey70", size= 0.3) +
+  geom_sf(data = geo_au_sf_evo_globale_2, 
+          aes(fill = cut(tcam, classes$brks, include.lowest = TRUE)), show.legend = TRUE, size= 0.3) +
+  scale_fill_manual(name = "Taux de croissance\nannuel moyen", values = ma_palette) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2013, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
+  ggtitle("Évolution du nombre de services publics entre 2009 et 2018") +
+  facet_wrap(~periodes)
+
+ggsave(filename = "cartographie_2009-2013_2013-2018_TCAM_nb_sp_hors_extremes.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 35, height = 25, units = "cm") 
+
