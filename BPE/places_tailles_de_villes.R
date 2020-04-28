@@ -562,7 +562,25 @@ sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
   mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5)) %>%
   select(-`2009_non`:-`2018_oui`)
 
-write.csv2(sf_sp_au_wide_densite_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_service_global_taille_villes.csv", row.names = FALSE)
+write.csv2(sf_sp_au_wide_nb_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_service_global_taille_villes.csv", row.names = FALSE)
+
+sf_sp_au_wide_nb_RGPP %>%
+  pivot_longer(cols = -tailles_2016, names_to = "RGPP", values_to = "TCAM") %>%
+  separate(col = RGPP, into = c("RGPP", "annees"), sep = " ") %>%
+  ggplot(aes(x = annees, y = TCAM, fill = RGPP)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("#00a2b3", "#cf3e53"), name = "Services visés par la RGPP") +
+  ylab("Taux de croissance annuel moyen\ndu nombre de service") +
+  theme_julie() +
+  theme(axis.title.x = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Tailles des villes") +
+  facet_wrap(~fct_rev(tailles_2016))
+
+ggsave(filename = "RGPP_evo_nb_equipement_tailles_global.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 22, height = 15, units = "cm")
+
 
 # Hors bureaux de poste
 sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
@@ -581,8 +599,25 @@ sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
   mutate(`oui 2013-2018` = TCAM(datefin = `2018_oui`, datedebut = `2013_oui`, nbannee = 5)) %>%
   select(-`2009_non`:-`2018_oui`)
 
-write.csv2(sf_sp_au_wide_densite_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_service__global_taille_villes_hors_poste.csv", row.names = FALSE)
+write.csv2(sf_sp_au_wide_nb_RGPP, "BPE/sorties/tailles_villes_places_services_publics/sorties_data/evo_RGPP_nb_service_global_taille_villes_hors_poste.csv", row.names = FALSE)
 
+sf_sp_au_wide_nb_RGPP %>%
+  pivot_longer(cols = -tailles_2016, names_to = "RGPP", values_to = "TCAM") %>%
+  separate(col = RGPP, into = c("RGPP", "annees"), sep = " ") %>%
+  ggplot(aes(x = annees, y = TCAM, fill = RGPP)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("#00a2b3", "#cf3e53"), name = "Services visés par la RGPP") +
+  ylab("Taux de croissance annuel moyen\ndu nombre de service") +
+  theme_julie() +
+  theme(axis.title.x = element_blank()) +
+  ggtitle('Services étudiés hors "bureaux de poste"') +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Tailles des villes") +
+  facet_wrap(~fct_rev(tailles_2016))
+
+ggsave(filename = "RGPP_evo_nb_equipement_tailles_global_hors_poste.png", plot = last_plot(), 
+       path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM", device = "png",
+       width = 22, height = 15, units = "cm")
 
 # En considérant la taille des villes
 sf_sp_au_wide_nb_RGPP <- sf_services_publics_aires_urbaines %>%
