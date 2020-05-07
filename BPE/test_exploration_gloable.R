@@ -278,3 +278,188 @@ ggsave(filename = "aires_urbaines_acp_cah_carto.png", plot = last_plot(), type =
 # mais ici les densités jouent pour beaucoup alors que l'on a un différentiel initial entre les tailles
 # des villes qui est grandement dû au fait que les tailles des établissements (pas connus) sont forcément différenciés
 
+# ------------- tableau avec 2 périodes d'évolution sp ---------------
+# période 2009-2018
+tab_acp_test <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  select(AU2010, LIBAU2010, pop2009, pop1999, pop1975, annee, typologie, nb_equip, geometry) %>%
+  group_by(AU2010, LIBAU2010, pop2009, pop1999, pop1975, geometry, annee) %>%
+  summarise_if(is.numeric, sum) %>%
+  pivot_wider(id_cols = AU2010:geometry, names_from = annee, values_from = nb_equip) %>%
+  rename(nb_equip_2009 = `2009`,
+         nb_equip_2013 = `2013`,
+         nb_equip_2018 = `2018`) %>%
+  mutate(densite_2009 = nb_equip_2009/pop2009*10000) %>%
+  mutate(pop_75_99 = TCAM(datefin = pop1999, datedebut = pop1975, nbannee = 24),
+         pop_99_09 = TCAM(datefin = pop2009, datedebut = pop1999, nbannee = 20),
+         sp_09_13 = TCAM(datefin = nb_equip_2013, datedebut = nb_equip_2009, nbannee = 4),
+         sp_13_18 = TCAM(datefin = nb_equip_2018, datedebut = nb_equip_2013, nbannee = 5)) %>%
+  ungroup()
+
+
+# il y a deux AU avec NA dans les services publics (suppression)
+tab_acp_test <- tab_acp_test %>%
+  filter(!is.na(densite_2009) & !is.na(sp_09_13) & !is.na(sp_13_18))
+
+acp_tableau <- tab_acp_test %>% select(densite_2009:sp_13_18)
+
+GGally::ggpairs(acp_tableau %>% filter(sp_09_13 < 30 & sp_13_18 < 30))
+
+acp <- dudi.pca(acp_tableau, scannf = FALSE, nf = ncol(acp_tableau))
+explor(acp)
+
+acp_tableau <- acp_tableau %>% filter(sp_09_13 < 30 & sp_13_18 < 30)
+acp <- dudi.pca(acp_tableau, scannf = FALSE, nf = ncol(acp_tableau))
+explor(acp)
+
+
+# en s'intéressant seulement aux changements de sp :
+acp_tableau_2 <- acp_tableau %>%
+  filter(sp_09_13 != 0 | sp_13_18 != 0)
+acp_2 <- dudi.pca(acp_tableau_2, scannf = FALSE, nf = ncol(acp_tableau_2))
+explor(acp_2)
+
+
+# ------------------ cah : tab général ------------------------------------
+cah_acp <- acp_tableau %>%
+  CAH_sur_coord_ACP()
+
+plot(cah_acp, hang = -1, cex = 0.6, 
+     main = "Dendro",
+     xlab = "villes")
+
+inertie <- sort(cah_acp$height, decreasing = TRUE)
+plot(inertie, type = "h", xlab = "nombre de classes", ylab = "inertie")
+
+inertie <- inertie/sum(inertie)*100
+barplot(inertie[1:20], col = "#454847", border = "#454847", names.arg = seq(0, 19, 1),
+        xlab = "nombre de classes",
+        ylab = "part de l'inertie totale (%)")
+# donc pour le présent cas, on peut découper en 6 classes (une classe qui contiendra 2 aires urbaines fufu)
+
+typo_tab_general <- cutree(cah_acp, k = 6)  # k = nombre de classes
+
+acp_tableau_enrichi <- tab_acp_test %>%
+  filter(sp_09_13 < 30 & sp_13_18 < 30) %>%
+  select(densite_2009:sp_13_18) %>%
+  Standar() %>% # nécessaire de standardiser les valeurs du tableau initial
+  bind_cols(tab_acp_test %>% filter(sp_09_13 < 30 & sp_13_18 < 30) %>% select(-densite_2009:-sp_13_18)) %>%
+  as_tibble() %>%
+  mutate(cluster = factor(typo_tab_general, levels = 1:6))
+
+acp_tableau_visu <- acp_tableau_enrichi %>% # nouvelle colonne avec appartenance des lignes i par classe
+  group_by(cluster) %>%
+  summarise_if(is.numeric, mean)
+
+a <- acp_tableau_visu %>%
+  select(-pop2009:-nb_equip_2018) %>%
+  rename(`densité en 2009` = densite_2009,
+         `evo. sp 2009-2013` = sp_09_13,
+         `evo. sp 2013-2018` = sp_13_18,
+         `evo. pop. 1975-1999` = pop_75_99,
+         `evo. pop. 1999-2009` = pop_99_09) %>%
+  pivot_longer(cols = -cluster, names_to = "variables", values_to = "moyenne_cluster") %>%
+  ggplot() +
+  geom_bar(aes(x = moyenne_cluster, y = variables, fill = cluster), stat = "identity", show.legend = FALSE) +
+  scale_fill_tableau(palette = "Tableau 10") +
+  xlab("Moyennes des valeurs standardisées par classe") +
+  theme_julie() +
+  theme(axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Classe de périodes : CAH (distance euclidienne)") +
+  facet_wrap(~cluster)
+
+# carto
+acp_tableau_enrichi <- st_as_sf(x = acp_tableau_enrichi, wkt = "geometry", crs = 2154)
+
+b <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = acp_tableau_enrichi, aes(fill = cluster), show.legend = FALSE, size = 0.2) +
+  scale_fill_tableau(palette = "Tableau 10") +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle("Caractérisation de l'évolution des services publics des aires urbaines")
+
+b / a + plot_layout(heights = c(2, 1))
+
+ggsave(filename = "aires_urbaines_acp_cah_carto_tcam_2009-2013-2018.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/acp_cah/figures/toutes_au", dpi = 300,  width = 25, height = 30, units = "cm")
+
+
+
+# ------------------ cah : tab. changements des services publics ------------------------------------
+cah_acp <- acp_tableau_2 %>%
+  CAH_sur_coord_ACP()
+
+plot(cah_acp, hang = -1, cex = 0.6, 
+     main = "Dendro",
+     xlab = "villes")
+
+inertie <- sort(cah_acp$height, decreasing = TRUE)
+plot(inertie, type = "h", xlab = "nombre de classes", ylab = "inertie")
+
+inertie <- inertie/sum(inertie)*100
+barplot(inertie[1:20], col = "#454847", border = "#454847", names.arg = seq(0, 19, 1),
+        xlab = "nombre de classes",
+        ylab = "part de l'inertie totale (%)")
+# donc pour le présent cas, on peut découper en 6 classes (une classe qui contiendra 2 aires urbaines fufu)
+
+typo_tab_general <- cutree(cah_acp, k = 6)  # k = nombre de classes
+
+acp_tableau_enrichi <- tab_acp_test %>%
+  filter(sp_09_13 != 0 | sp_13_18 != 0) %>% 
+  filter(sp_09_13 < 30 & sp_13_18 < 30) %>%
+  select(densite_2009:sp_13_18) %>%
+  Standar() %>% # nécessaire de standardiser les valeurs du tableau initial
+  bind_cols(tab_acp_test %>% filter(sp_09_13 != 0 | sp_13_18 != 0) %>% filter(sp_09_13 < 30 & sp_13_18 < 30) %>% select(-densite_2009:-sp_13_18)) %>%
+  as_tibble() %>%
+  mutate(cluster = factor(typo_tab_general, levels = 1:6))
+
+acp_tableau_visu <- acp_tableau_enrichi %>% # nouvelle colonne avec appartenance des lignes i par classe
+  group_by(cluster) %>%
+  summarise_if(is.numeric, mean)
+
+a <- acp_tableau_visu %>%
+  select(-pop2009:-nb_equip_2018) %>%
+  rename(`densité en 2009` = densite_2009,
+         `evo. sp 2009-2013` = sp_09_13,
+         `evo. sp 2013-2018` = sp_13_18,
+         `evo. pop. 1975-1999` = pop_75_99,
+         `evo. pop. 1999-2009` = pop_99_09) %>%
+  pivot_longer(cols = -cluster, names_to = "variables", values_to = "moyenne_cluster") %>%
+  ggplot() +
+  geom_bar(aes(x = moyenne_cluster, y = variables, fill = cluster), stat = "identity", show.legend = FALSE) +
+  scale_fill_tableau(palette = "Tableau 10") +
+  xlab("Moyennes des valeurs standardisées par classe") +
+  theme_julie() +
+  theme(axis.title.y = element_blank()) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
+       subtitle = "Classe de périodes : CAH (distance euclidienne)") +
+  facet_wrap(~cluster)
+
+# carto
+acp_tableau_enrichi <- st_as_sf(x = acp_tableau_enrichi, wkt = "geometry", crs = 2154)
+
+b <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = acp_tableau_enrichi, aes(fill = cluster), show.legend = FALSE, size = 0.2) +
+  scale_fill_tableau(palette = "Tableau 10") +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle("Caractérisation de l'évolution des services publics des aires urbaines")
+
+b / a + plot_layout(heights = c(2, 1))
+
+
+ggsave(filename = "aires_urbaines_acp_cah_carto_tcam_2009-2013-2018.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/acp_cah/figures/changement_au", dpi = 300,  width = 25, height = 30, units = "cm")
