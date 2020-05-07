@@ -61,7 +61,7 @@ sf_services_publics_aires_urbaines <- sf_services_publics_aires_urbaines %>%
                                 if_else(pop1999 > 200000, "grande\n(> 200.000 hab.)", "moyenne")))
 
 
-# construction tableau pour simple exploration ACP-CAH exploratoires
+# ------------- construction tableau pour simple exploration ACP-CAH exploratoires ---------------
 # période 2009-2018
 tab_acp_test <- sf_services_publics_aires_urbaines %>%
   filter(validite_temporelle == "2009-2013-2018" & annee %in% c("2009", "2018")) %>%
@@ -77,6 +77,7 @@ tab_acp_test <- sf_services_publics_aires_urbaines %>%
          sp_09_18 = TCAM(datefin = nb_equip_2018, datedebut = nb_equip_2009, nbannee = 9)) %>%
   ungroup()
 
+
 # il y a deux AU avec NA dans les services publics (suppression)
 tab_acp_test <- tab_acp_test %>%
   filter(!is.na(densite_2009) & !is.na(sp_09_18))
@@ -86,7 +87,7 @@ acp_tableau <- tab_acp_test %>% select(densite_2009:sp_09_18)
 GGally::ggpairs(acp_tableau)
 # corrélation dans les évolution de population au fil du temps malgré tout, meme si pas gigantesque
 # par ailleurs, beaucoup de villes où il n'y a aucune évolution des sp
-# on ne s'intéresse pas au maintien ici mais aux changements donc on les vire
+# on ne s'intéresse pas au maintien ici mais aux changements donc possibilité de les virer
 
 acp <- dudi.pca(acp_tableau, scannf = FALSE, nf = ncol(acp_tableau))
 explor(acp)
@@ -274,3 +275,6 @@ ggsave(filename = "aires_urbaines_acp_cah_carto.png", plot = last_plot(), type =
        path = "BPE/sorties/acp_cah/figures/changement_au", dpi = 300,  width = 25, height = 30, units = "cm")
 
 # résultats plus intéressants quand on travaille sur le changement à proprement parlé que sur l'évolution
+# mais ici les densités jouent pour beaucoup alors que l'on a un différentiel initial entre les tailles
+# des villes qui est grandement dû au fait que les tailles des établissements (pas connus) sont forcément différenciés
+
