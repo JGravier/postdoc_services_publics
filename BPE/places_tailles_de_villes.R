@@ -610,7 +610,7 @@ sf_sp_au_wide_nb_RGPP %>%
   ylab("Taux de croissance annuel moyen\ndu nombre de service") +
   theme_julie() +
   theme(axis.title.x = element_blank()) +
-  ggtitle('Services étudiés hors "bureaux de poste"') +
+  ggtitle('Services étudiés hors "bureau de poste"') +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités\nSources: BPE 2009, 2013, 2018 (Insee), délim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)",
        subtitle = "Tailles des villes") +
   facet_wrap(~fct_rev(tailles_2016))
