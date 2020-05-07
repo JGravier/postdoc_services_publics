@@ -278,6 +278,33 @@ ggsave(filename = "aires_urbaines_acp_cah_carto.png", plot = last_plot(), type =
 # mais ici les densités jouent pour beaucoup alors que l'on a un différentiel initial entre les tailles
 # des villes qui est grandement dû au fait que les tailles des établissements (pas connus) sont forcément différenciés
 
+# carto avec cercle proportionnel de taille en 2009
+b <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_point(data = acp_tableau_enrichi %>% arrange(desc(pop2009)),
+    aes(color = cluster, size = pop2009, geometry = geometry),
+    stat = "sf_coordinates", alpha = 0.8, show.legend = FALSE
+  ) +
+  scale_color_tableau(palette = "Tableau 10") +
+  scale_size_area(max_size = 55) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  ggtitle("Caractérisation de l'évolution des services publics des aires urbaines")
+
+b / a + plot_layout(heights = c(2, 1))
+
+ggsave(filename = "aires_urbaines_acp_cah_carto_taille.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/acp_cah/figures/changement_au", dpi = 300,  width = 25, height = 30, units = "cm")
+
+ggsave(filename = "aires_urbaines_acp_cah_carto_taille.pdf", plot = last_plot(), device = cairo_pdf,
+       path = "BPE/sorties/acp_cah/figures/changement_au", dpi = 300,  width = 25, height = 30, units = "cm")
+
+
 # ------------- tableau avec 2 périodes d'évolution sp ---------------
 # période 2009-2018
 tab_acp_test <- sf_services_publics_aires_urbaines %>%
@@ -447,6 +474,7 @@ acp_tableau_enrichi <- st_as_sf(x = acp_tableau_enrichi, wkt = "geometry", crs =
 
 b <- ggplot() +
   geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = tab_acp_test %>% st_as_sf(wkt = "geometry", crs = 2154), fill = "grey80", color = "grey70", size = 0.2) +
   geom_sf(data = acp_tableau_enrichi, aes(fill = cluster), show.legend = FALSE, size = 0.2) +
   scale_fill_tableau(palette = "Tableau 10") +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
