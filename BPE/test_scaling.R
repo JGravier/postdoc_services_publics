@@ -76,7 +76,7 @@ panel.cor <- function(x, y, digits = 2, cex.cor, ...) # à partir de http://www.
   # lg(y) = alg(x) + b, alors y = 10^b * x^a
   
   # calcul p-value
-  p <- cor.test(log10(x), log10(y))$p.value
+  p <- cor.test(x, y)$p.value
   txt1 <- format(c(p, 0.123456789), digits = digits)[1]
   txt1 <- paste("p = ", txt1, sep = "")
   if(p < 0.01) txt1 <- paste("p = ", "< 0.01", sep = "")
