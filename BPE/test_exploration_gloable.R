@@ -5,6 +5,7 @@ library(patchwork)
 library(ade4)
 library(explor)
 library(Cairo)
+library(GGally)
 
 
 source("fonctions_bases.R")
@@ -491,3 +492,42 @@ b / a + plot_layout(heights = c(2, 1))
 
 ggsave(filename = "aires_urbaines_acp_cah_carto_tcam_2009-2013-2018.png", plot = last_plot(), type = "cairo",
        path = "BPE/sorties/acp_cah/figures/changement_au", dpi = 300,  width = 25, height = 30, units = "cm")
+
+# ------------- tableau avec chacun des sp ---------------
+# période 2009-2018
+tab_densite <- sf_services_publics_aires_urbaines %>%
+  filter(annee == "2009") %>%
+  select(AU2010, pop2009, annee, nb_equip) %>%
+  group_by(AU2010, annee) %>%
+  summarise_if(is.numeric, sum) %>%
+  pivot_wider(id_cols = c("AU2010", "pop2009"), names_from = annee, values_from = nb_equip) %>%
+  rename(nb_equip_2009 = `2009`) %>%
+  select(AU2010, pop2009, nb_equip_2009) %>%
+  mutate(densite_2009 = nb_equip_2009/pop2009*10000) %>%
+  select(-pop2009)
+
+tab_acp_test_2 <- sf_services_publics_aires_urbaines %>%
+  filter(validite_temporelle == "2009-2013-2018") %>%
+  select(AU2010, LIBAU2010, pop2009, pop1999, pop1975, annee, ID, nb_equip, geometry) %>%
+  group_by(AU2010, LIBAU2010, pop2009, pop1999, pop1975, geometry, ID, annee) %>%
+  summarise_if(is.numeric, sum) %>%
+  mutate(annee_typo = paste(annee, ID, sep = "_")) %>%
+  pivot_wider(id_cols = AU2010:geometry, names_from = annee_typo, values_from = nb_equip) %>%
+  mutate(pop_75_99 = TCAM(datefin = pop1999, datedebut = pop1975, nbannee = 24),
+         pop_99_09 = TCAM(datefin = pop2009, datedebut = pop1999, nbannee = 20)) %>%
+  mutate(police = TCAM(datefin = `2018_1`, datedebut = `2009_1`, nbannee = 9),
+         poste = TCAM(datefin = `2018_2`, datedebut = `2009_2`, nbannee = 9),
+         secondary_teaching = TCAM(datefin = `2018_7`, datedebut = `2009_7`, nbannee = 9),
+         sup_public_only = TCAM(datefin = `2018_8`, datedebut = `2009_8`, nbannee = 9),
+         sup_public_or_private = TCAM(datefin = `2018_9`, datedebut = `2009_9`, nbannee = 9),
+         justice = TCAM(datefin = `2018_10`, datedebut = `2009_10`, nbannee = 9),
+         health = TCAM(datefin = `2018_11`, datedebut = `2009_11`, nbannee = 9)) %>%
+  ungroup() %>%
+  left_join(., y = tab_densite, by = "AU2010")
+# too many NA
+
+# ggpairs
+tab_acp_test_2 %>% select(pop_75_99:densite_2009) %>% ggpairs()
+
+rm(tab_densite, tab_acp_test_2)
+
