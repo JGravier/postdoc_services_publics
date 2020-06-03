@@ -30,8 +30,9 @@ sf_sp_communes <- sf_sp_communes %>%
 sf_sp_communes <- st_as_sf(x = sf_sp_communes, wkt = "geometry", crs = 2154)
 
 sf_sp_communes_summarise <- sf_sp_communes %>%
-  filter(ID %in% c("2", "7", "1")) %>% # sélection des bureaux de poste
-  group_by(depcom, annee, ID, pop2016, pop2009, pop1999, pop1990, pop1975) %>%
+  filter(ID %in% c("2", "7", "11")) %>% # sélection des bureaux de poste et des ét. d'éduc. secondaire
+  filter(INSEE_REG %in% c("44", "75", "76", "84")) %>% # sélection de 4 régions : Grand Est, Nlle Aquitaine, Occitanie et Auvergne-Rhône-Alpes
+  group_by(depcom, annee, ID, INSEE_REG, pop2016, pop2009, pop1999, pop1990, pop1975) %>%
   summarise_if(is.numeric, sum) %>%
   select(depcom:nb_equip)
 
@@ -49,24 +50,27 @@ sf_sp_communes_2018 <- sf_sp_communes_summarise %>%
 tableau_iteration <- tibble(
   taille = numeric(),
   service = character(),
+  regions = character(),
   nombre = integer(),
-  correlation_sp_pop_evo_75_09 = numeric(),
   correlation_sp_pop_evo_90_09 = numeric(),
   correlation_sp_pop_evo_99_09 = numeric()
 )
 
-tous_services <- c("2", "7", "1")
-toutes_tailles <- seq(from = 2500, to = 25000, by = 2500) # test 1 de taille des hexagones (ici en mètres)
+tous_services <- c("2", "7", "11")
+toutes_tailles <- seq(from = 2500, to = 35000, by = 2500) # test 1 de taille des hexagones (ici en mètres)
 toutes_tailles <- seq(from = 5000, to = 50000, by = 5000) # test 2
+regions_selection <- c("44", "75", "76", "84")
 
 for (taille_hexa in toutes_tailles){
   for (identifiant_service in tous_services){
-#identifiant_service <- "2"
-#taille_hexa <- 6000
-
+    for (regions in regions_selection){
+# identifiant_service <- "2"
+# taille_hexa <- 6000
+# regions <- "44"
+      
 # création d'une grille hexagonale :
 grid_hexa <- st_make_grid(x = sf_sp_communes %>%
-                            filter(ID == identifiant_service), 
+                            filter(ID == identifiant_service, INSEE_REG == regions), 
                           cellsize = taille_hexa, # mesures selon le système de projection
                           square = FALSE, # if FALSE : create hexagonal
                           what = "centers")
@@ -84,7 +88,7 @@ grid_hexa <- grid_hexa %>%
 
 interpo_grid_2009 <- aw_interpolate(.data = grid_hexa, tid = id, # la grille hexagonale consituée
                                     source = sf_sp_communes_2009 %>% 
-                                      filter(ID == identifiant_service), 
+                                      filter(ID == identifiant_service & INSEE_REG == regions),
                                     sid = depcom, # les données à interpoler
                                     weight = "sum",
                                     output = "tibble", 
@@ -93,7 +97,7 @@ interpo_grid_2009 <- aw_interpolate(.data = grid_hexa, tid = id, # la grille hex
 
 interpo_grid_2018 <- aw_interpolate(.data = grid_hexa, tid = id,
                                     source = sf_sp_communes_2018  %>% 
-                                      filter(ID == identifiant_service), 
+                                      filter(ID == identifiant_service & INSEE_REG == regions), 
                                     sid = depcom,
                                     weight = "sum",
                                     output = "tibble", 
@@ -136,18 +140,18 @@ variable <- interpo_grid %>%
   select(pop1975_2009, pop1990_2009, pop1999_2009, sp_2009_2018) %>%
   st_drop_geometry()
 
-cor_75_09 <- cor(variable$sp_2009_2018, variable$pop1975_2009)
 cor_90_09 <- cor(variable$sp_2009_2018, variable$pop1990_2009)
 cor_99_09 <- cor(variable$sp_2009_2018, variable$pop1999_2009)
 nombre_hexa
 taille_hexa
 identifiant_service
+regions
 
 resultat_iteration <- tibble(
   taille = taille_hexa,
   service = identifiant_service,
+  regions = regions,
   nombre = nombre_hexa,
-  correlation_sp_pop_evo_75_09 = cor_75_09,
   correlation_sp_pop_evo_90_09 = cor_90_09,
   correlation_sp_pop_evo_99_09 = cor_99_09
 )
@@ -156,24 +160,34 @@ tableau_iteration <- tableau_iteration %>%
   bind_rows(resultat_iteration)
 # Fin boucle
   }
+  }
 }
 
-tableau_iteration_base <- tableau_iteration
-tableau_iteration_test2 <- tableau_iteration
+tableau_iteration_base <- tableau_iteration %>%
+  mutate(taille = taille/1000) %>% # la taille en km
+  mutate(service = if_else(service == "2", "bureaux de poste", 
+                           if_else(service == "7", "collèges et lycées publics", "Établissements de santé"))) %>%
+  mutate(regions = if_else(regions == "44", "Grand Est", 
+                           if_else(regions == "75", "Nouvelle Aquitaine",
+                                   if_else(regions == "76", "Occitanie", "Auvergne-Rhône-Alpes"))))
+
+tableau_iteration_test2 <- tableau_iteration %>%
+  mutate(taille = taille/1000) %>%
+  mutate(service = if_else(service == "2", "bureaux de poste", "collèges et lycées publics")) %>%
+  mutate(regions = if_else(regions == "44", "Grand Est", 
+                           if_else(regions == "75", "Nouvelle Aquitaine",
+                                   if_else(regions == "76", "Occitanie", "Auvergne-Rhône-Alpes"))))
 
 write.csv2(tableau_iteration_base, 
-           file = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM/interpolation/test_poste_colleges_lycees_1.csv",
+           file = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM/interpolation/postes_educ_sante_4regions_petite_maille.csv",
            row.names = FALSE)
 
 write.csv2(tableau_iteration_test2, 
-           file = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM/interpolation/test_poste_colleges_lycees_2.csv",
+           file = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM/interpolation/postes_educ_sec_4regions_grande_maille.csv",
            row.names = FALSE)
 
 tableau_iteration_base %>%
-  mutate(taille = taille/1000) %>%
-  mutate(service = if_else(service == "2", "bureaux de poste", 
-                           if_else(service == "7", "collèges et lycées publics", "police et gendarmerie"))) %>%
-  gather(key = "type", value = "correlation", -taille, -service, -nombre) %>%
+  gather(key = "type", value = "correlation", -taille, -service, -regions, -nombre) %>%
   mutate(type = if_else(type == "correlation_sp_pop_evo_75_09", "... TCAM pop. entre 1975 et 2009",
                         if_else(type == "correlation_sp_pop_evo_90_09",
                                 "... TCAM pop. entre 1990 et 2009",
@@ -187,18 +201,15 @@ tableau_iteration_base %>%
   xlab("Taille des mailles hexagonales en km") +
   ylab("Coefficient de corrélation") +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
-  ggtitle("Les services publics dans les aires urbaines françaises") +
-  facet_wrap( ~service, nrow = 3)
+  ggtitle("Les services publics dans les aires urbaines") +
+  facet_grid(service ~ regions)
 
-ggsave(filename = "correlations_hexagones_postes_colleges_lycees_test3.png", plot = last_plot(), type = "cairo",
+ggsave(filename = "correlations_hexagones_postes_educ_sante_4regions_petite_maille_revu.png", plot = last_plot(), type = "cairo",
        path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM/interpolation/", dpi = 300, 
-       width = 25, height = 20, units = "cm")
+       width = 40, height = 25, units = "cm")
 
 tableau_iteration_test2 %>%
-  mutate(taille = taille/1000) %>%
-  mutate(service = if_else(service == "2", "bureaux de poste", 
-                           if_else(service == "7", "collèges et lycées publics", "police et gendarmerie"))) %>%
-  gather(key = "type", value = "correlation", -taille, -service, -nombre) %>%
+  gather(key = "type", value = "correlation", -taille, -service, -regions, -nombre) %>%
   mutate(type = if_else(type == "correlation_sp_pop_evo_75_09", "... TCAM pop. entre 1975 et 2009",
                         if_else(type == "correlation_sp_pop_evo_90_09",
                                 "... TCAM pop. entre 1990 et 2009",
@@ -212,10 +223,10 @@ tableau_iteration_test2 %>%
   xlab("Taille des mailles hexagonales en km") +
   ylab("Coefficient de corrélation") +
   labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources:  BPE 2009, 2018 (Insee),\ndélim. AU 2010 géo. 2019 (Insee), ADMIN EXPRESS géo. 2019 (IGN)") +
-  ggtitle("Les services publics dans les aires urbaines françaises") +
-  facet_wrap( ~service, nrow = 3)
+  ggtitle("Les services publics dans les aires urbaines") +
+  facet_grid(service ~ regions)
 
-ggsave(filename = "correlations_hexagones_postes_colleges_lycees_test4.png", plot = last_plot(), type = "cairo",
+ggsave(filename = "correlations_hexagones_postes_educ_sec_4regions_grande_maille.png", plot = last_plot(), type = "cairo",
        path = "BPE/sorties/tailles_villes_places_services_publics/figures/1.2.TCAM/interpolation/", dpi = 300, 
-       width = 25, height = 20, units = "cm")
+       width = 40, height = 25, units = "cm")
 
