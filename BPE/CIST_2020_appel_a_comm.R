@@ -191,33 +191,32 @@ any(is.na(st_dimension(bpe_2009_au)))
 
 
 ## exploration carto par type de service
-
-bpe_2009_au %>% select(Gendarmerie, Police, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
-  filter(Gendarmerie == 1) %>%
+bpe_2009_au %>% select(`Bureau de poste`, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(`Bureau de poste` == 1) %>%
   mutate(date = "2009") -> `2009`
 bpe_2018_wide_au %>% 
-  select(Gendarmerie, Police, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
-  filter(Gendarmerie == 1) %>%
+  select(`Bureau de poste`, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(`Bureau de poste` == 1) %>%
   mutate(date = "2018") -> `2018`
 
 
 ## visualisation : sorties cartographiques
 periode_2009 <- ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = `2009`, fill = "darkgreen", color = "darkgreen") +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = au_2010_pop, fill = "grey85", color = "grey80", size = 0.1) +
+  geom_sf(data = `2009`, fill = "#252525", color = "#252525", size = 0.02) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank()) +
-  ggtitle("Communes desservies par un service d'urgences\ndans les aires urbaines") +
+  ggtitle("Communes desservies par un bureau de Poste\ndans les aires urbaines") +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   labs(subtitle = "2009")
 
 periode_2018 <- ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = `2018`, fill = "darkgreen", color = "darkgreen") +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70", size = 0.1) +
+  geom_sf(data = `2018`, fill = "#252525", color = "#252525", size = 0.02) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -229,12 +228,14 @@ periode_2018 <- ggplot() +
 diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM"))
 diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM"))
 
-couleurs <- c("disparition" = "firebrick4", "apparition" = "dodgerblue4")
+couleurs <- c("disparition" = "#b2182b", "apparition" = "#2166ac")
 ecart_2009_2018 <- ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70") +
-  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), aes(fill = "disparition", color = "disparition")) +
-  geom_sf(data = diff_2018_2009 %>% filter(is.na(date.y)), aes(fill = "apparition", color = "apparition")) +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70", size = 0.1) +
+  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), 
+          aes(fill = "disparition", color = "disparition"), size = 0.02) +
+  geom_sf(data = diff_2018_2009 %>% filter(is.na(date.y)), 
+          aes(fill = "apparition", color = "apparition"), size = 0.02) +
   theme_igray() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -246,7 +247,15 @@ ecart_2009_2018 <- ggplot() +
   scale_color_manual(name = "", values = couleurs) # idem pour les contours
 
 # patchwork :
-periode_2009 + periode_2018 + ecart_2009_2018
+(periode_2009 | periode_2018)
+library(Cairo)
+
+ggsave(filename = "poste_bureau_evo1.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/CIST2020_revu/", dpi = 300,  width = 30, height = 20, units = "cm")
+
+ecart_2009_2018
+ggsave(filename = "poste_bureau_evo2.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/CIST2020_revu/", dpi = 300,  width = 20, height = 15, units = "cm")
 
 # ----------------------------- ECHELLE DES AIRES URBAINES -----------------------------------------------------
 # --------------------- ECHELLE DES AIRES URBAINES ------------------------------------------
@@ -389,6 +398,9 @@ b <- au_global_volume %>%
 
 
 a + b
+ggsave(filename = "Figure1.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/CIST2020_revu/", dpi = 300,  width = 30, height = 20, units = "cm")
+
 
 # ------------------------------ exploration cartographique ------------------------------------------------
 # BPE liée aux aires urbaines
@@ -470,9 +482,9 @@ communes_2019_au_2010 %>%
   st_drop_geometry() %>%
   select(CODGEO, AU2010) %>%
   left_join(., y = bpe_2018_wide_au, by = c("CODGEO" = "DEPCOM")) %>%
-  select(`Bureau de poste`, `Agence postale`, `Relais poste`, CODGEO, AU2010.x, LIBAU2010, STATUT, CATAEU2010) %>%
+  select(`Bureau de poste`, CODGEO, AU2010.x, LIBAU2010, STATUT, CATAEU2010) %>%
   mutate(avec_sans = if_else(
-    condition = `Bureau de poste` == 1 | `Agence postale` == 1 | `Relais poste` == 1, true = "avec_equipements", false = "sans_equipements"
+    condition = `Bureau de poste` == 1, true = "avec_equipements", false = "sans_equipements"
   )) %>% 
   mutate(avec_sans_boolean = if_else(is.na(avec_sans), true = 1, false = 0)) %>%
   group_by(AU2010.x) %>%
@@ -502,21 +514,27 @@ classes <- classIntervals(var = communes_avec_sans_equipement_au_2009_2018$pourc
 
 # France : cartographie
 ggplot() +
-  geom_sf(data = france, fill = "grey98", color = "grey50") +
-  geom_sf(data = au_2010_pop, fill = "darkorange", color = "grey40") +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = au_2010_pop, fill = "darkorange", color = "grey40", size = 0.15) +
   geom_sf(data = communes_avec_sans_equipement_au_2009_2018, 
-          aes(fill = cut(pourc_sans_equipements, classes$brks, include.lowest = TRUE)), show.legend = TRUE) +
+          aes(fill = cut(pourc_sans_equipements, classes$brks, include.lowest = TRUE)), 
+          show.legend = TRUE,
+          size = 0.15) +
   scale_fill_brewer(name = "Part des communes où les habitants\nvont vers une autre commune\npour accéder aux services étudiés\n(en orange : aires entièrement équipées)", 
                     palette = "Purples", drop = FALSE, direction = 1) +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   theme_igray() +
+  theme_julie() +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks = element_blank(),
         axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : INSEE, BPE 2013-2018") +
-  ggtitle("Bureau de poste, agence postale communale et relais postal en 2018")
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)") +
+  facet_wrap(~date)
+
+ggsave(filename = "Figure4.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/CIST2020_revu/", dpi = 300,  width = 30, height = 20, units = "cm")
 
 # ----------------------- Bureaux de poste : comparaison tailles de villes 2009-2018 -------------------------------------
 bpe_2009_2018_poste <- left_join(x = bpe_2009_au %>% st_drop_geometry() %>% select(INSEECOM:`Bureau de poste`, LIBGEO.x, AU2010, LIBAU2010, POPULATION), 
@@ -571,14 +589,71 @@ bpe_2009_2018_poste_au %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) +
   ylab("Taux de croissance annuel moyen") +
-  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités..\n Sources : BPE 2013-2018, Insee") +
-  ggtitle("Bureaux de poste des aires urbaines entre 2009 et 2018")
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\n Sources : BPE 2009-2018, Insee")
+
+ggsave(filename = "Figure2.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/CIST2020_revu/", dpi = 300,  width = 20, height = 15, units = "cm")
 
 
 
 
+#-------- Police et gendarmerie -----------
+## exploration carto par type de service
+bpe_2009_au %>% 
+  select(Gendarmerie, Police, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Police == 1) %>%
+  mutate(date = "2009") -> `2009`
+
+## visualisation : sorties cartographiques
+periode_2009 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = au_2010_pop, fill = "grey85", color = "grey80", size = 0.1) +
+  geom_sf(data = `2009`, fill = "#252525", color = "#252525", size = 0.1) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggtitle("Communes desservies par un poste de Police\ndans les aires urbaines") +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(subtitle = "en 2009")
 
 
+bpe_2009_au %>% 
+  select(Gendarmerie, Police, INSEECOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Gendarmerie == 1) %>%
+  mutate(date = "2009") -> `2009`
+bpe_2018_wide_au %>% 
+  select(Gendarmerie, Police, DEPCOM, LIBAU2010, STATUT, CATAEU2010) %>% 
+  filter(Gendarmerie == 1) %>%
+  mutate(date = "2018") -> `2018`
+
+
+diff_2009_2018 <- left_join(x = `2009`, y = `2018` %>% st_drop_geometry(), by = c("INSEECOM" = "DEPCOM"))
+diff_2018_2009 <- left_join(x = `2018`, y = `2009` %>% st_drop_geometry(), by = c("DEPCOM" = "INSEECOM"))
+
+couleurs <- c("disparition" = "#b2182b", "apparition" = "#2166ac")
+ecart_2009_2018 <- ggplot() +
+  geom_sf(data = france, fill = "grey98", color = "grey50", size = 0.3) +
+  geom_sf(data = au_2010_pop, fill = "grey80", color = "grey70", size = 0.1) +
+  geom_sf(data = diff_2009_2018 %>% filter(is.na(date.y)), 
+          aes(fill = "disparition", color = "disparition"), size = 0.1) +
+  geom_sf(data = diff_2018_2009 %>% filter(is.na(date.y)), 
+          aes(fill = "apparition", color = "apparition"), size = 0.1) +
+  theme_igray() +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank()) +
+  ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
+  labs(caption = "J. Gravier 2020 | LabEx DynamiTe, UMR Géographie-cités.\nSources : BPE 2009, 2018 (Insee), ADMIN EXPRESS 2019 (IGN)",
+       subtitle = "Gendarmerie : évolution 2009-2018") +
+  scale_fill_manual(name = "", values = couleurs) + # ajout légende manuellement
+  scale_color_manual(name = "", values = couleurs) # idem pour les contours
+
+# patchwork :
+periode_2009 + ecart_2009_2018
+
+ggsave(filename = "Figure5.png", plot = last_plot(), type = "cairo",
+       path = "BPE/sorties/CIST2020_revu/", dpi = 300,  width = 30, height = 30, units = "cm")
 
 
 
