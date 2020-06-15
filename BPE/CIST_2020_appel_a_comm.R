@@ -520,7 +520,7 @@ ggplot() +
           aes(fill = cut(pourc_sans_equipements, classes$brks, include.lowest = TRUE)), 
           show.legend = TRUE,
           size = 0.15) +
-  scale_fill_brewer(name = "Part des communes où les habitants\nvont vers une autre commune\npour accéder aux services étudiés\n(en orange : aires entièrement équipées)", 
+  scale_fill_brewer(name = "Part des communes où les habitants\nvont vers une autre commune\npour accéder au service étudié\n(en orange : aires entièrement équipées)", 
                     palette = "Purples", drop = FALSE, direction = 1) +
   ggspatial::annotation_scale(location = "tr",  width_hint = 0.2) +
   theme_igray() +
