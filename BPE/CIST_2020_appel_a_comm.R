@@ -658,6 +658,3 @@ ggsave(filename = "Figure5.png", plot = last_plot(), type = "cairo",
 
 
 
-
-
-
